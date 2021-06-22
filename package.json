@@ -1,0 +1,44 @@
+{
+  "name": "@rumblefish/eth-signer-kms",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "AWS_SDK_LOAD_CONFIG=true AWS_PROFILE=rf ts-node script.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rumblefishdev/eth-signer-kms.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/rumblefishdev/eth-signer-kms/issues"
+  },
+  "homepage": "https://github.com/rumblefishdev/eth-signer-kms#readme",
+  "peerDependencies": {
+    "aws-sdk": "*"
+  },
+  "dependencies": {
+    "@truffle/hdwallet-provider": "^1.4.1",
+    "@types/ethereum-protocol": "^1.0.1",
+    "asn1.js": "^5.4.1",
+    "bn.js": "^4.12.0",
+    "ethereum-protocol": "^1.0.1",
+    "ethereumjs-util": "^6.2.1",
+    "ethereumjs-wallet": "^1.0.1",
+    "js-sha3": "^0.8.0",
+    "url": "^0.10.3",
+    "web3-provider-engine": "^16.0.1"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^4.27.0",
+    "@typescript-eslint/parser": "^4.27.0",
+    "eslint": "^7.29.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-prettier": "^3.4.0",
+    "prettier": "^2.3.1",
+    "typescript": "^4.3.4"
+  }
+}
