@@ -1,10 +1,15 @@
-import BN from 'bn.js'
 import { KMS } from 'aws-sdk'
 import * as asn1 from 'asn1.js'
 import { keccak256 } from 'js-sha3'
+import { BN } from 'ethereumjs-util'
 import * as EthUtil from 'ethereumjs-util'
+import Common from 'ethereumjs-common'
+import { TransactionOptions } from 'ethereumjs-tx'
 
-import { sign, SignParams } from './kms'
+import { sign } from './kms'
+import { CreateSignatureParams, SignParams } from './types'
+
+const KNOWN_CHAIN_IDS = new Set([1, 3, 4, 5, 42])
 
 const EcdsaSigAsnParse = asn1.define('EcdsaSig', function (this: any) {
   this.seq().obj(this.key('r').int(), this.key('s').int())
@@ -30,7 +35,8 @@ export const getEthereumAddress = (publicKey: KMS.PublicKeyType): string => {
   return EthAddr
 }
 
-const findEthereumSig = async (signParams: SignParams) => {
+//findEthereumSig
+export const getRS = async (signParams: SignParams) => {
   const signature = await sign(signParams)
 
   if (signature.Signature == undefined) {
@@ -64,8 +70,8 @@ const recoverPubKeyFromSig = (msg: Buffer, r: BN, s: BN, v: number) => {
 
   return RecoveredEthAddr
 }
-
-const findRightKey = (msg: Buffer, r: BN, s: BN, expectedEthAddr: string) => {
+//findRightKey
+export const getV = (msg: Buffer, r: BN, s: BN, expectedEthAddr: string) => {
   let v = 27
   let pubKey = recoverPubKeyFromSig(msg, r, s, v)
   if (pubKey != expectedEthAddr) {
@@ -73,5 +79,46 @@ const findRightKey = (msg: Buffer, r: BN, s: BN, expectedEthAddr: string) => {
     pubKey = recoverPubKeyFromSig(msg, r, s, v)
   }
 
-  return { pubKey, v }
+  return v
+}
+
+export const createSignature = async ({
+  keyId,
+  message,
+  address
+}: CreateSignatureParams) => {
+  const { r, s } = await getRS({ keyId, message })
+  const v = getV(message, r, s, address)
+
+  return {
+    r: r.toBuffer(),
+    s: s.toBuffer(),
+    v: v
+  }
+}
+
+export const createTxOptions = ({
+  chainId,
+  hardfork
+}: {
+  chainId: number
+  hardfork: string
+}) => {
+  const chain = chainId
+  let txOptions: TransactionOptions
+
+  if (typeof chain !== 'undefined' && KNOWN_CHAIN_IDS.has(chain)) {
+    txOptions = { chain }
+  } else if (typeof chain !== 'undefined') {
+    const common = Common.forCustomChain(
+      1,
+      {
+        name: 'custom chain',
+        chainId: chain
+      },
+      hardfork
+    )
+    txOptions = { common }
+  }
+  return txOptions
 }

@@ -6,29 +6,26 @@ import ProviderSubprovider from 'web3-provider-engine/subproviders/provider'
 import RpcProvider from 'web3-provider-engine/subproviders/rpc'
 import WebsocketProvider from 'web3-provider-engine/subproviders/websocket'
 
-import HDWalletProvider from '@truffle/hdwallet-provider'
-import {
-  ChainId,
-  Hardfork
-} from '@truffle/hdwallet-provider/dist/constructor/types'
 import { CommonOptions } from '@truffle/hdwallet-provider/dist/constructor/Constructor'
 
-import { URL } from 'url'
 import type {
   JSONRPCRequestPayload,
   JSONRPCErrorCallback,
   JSONRPCResponsePayload
 } from 'ethereum-protocol'
-import ethJSWallet from 'ethereumjs-wallet'
+import { BN } from 'ethereumjs-util'
+import * as EthUtil from 'ethereumjs-util'
+import { Transaction, TxData } from 'ethereumjs-tx'
+
+import { URL } from 'url'
 import { KeyIdType } from 'aws-sdk/clients/kms'
 
-type KMSProviderConstructor = Pick<
+import { getPublicKey } from './kms'
+import { createTxOptions, getEthereumAddress, createSignature } from './eth'
+
+type KMSProviderConstructor = Omit<
   CommonOptions,
-  | 'shareNonce'
-  | 'providerOrUrl'
-  | 'pollingInterval'
-  | 'chainId'
-  | 'chainSettings'
+  'addressIndex' | 'derivationPath' | 'numberOfAddresses'
 > & {
   keyId: KeyIdType
 }
@@ -36,31 +33,34 @@ type KMSProviderConstructor = Pick<
 const singletonNonceSubProvider = new NonceSubProvider()
 
 class KMSProvider {
-  private KeyId: KeyIdType
-  private wallets: { [address: string]: ethJSWallet }
-  private addresses: string[]
-  private chainId?: ChainId
-  private initialized: Promise<void>
-  private hardfork: Hardfork
+  private keyId: KeyIdType
+  private address: string
+  private addressHash: Buffer
+  private chainId?: number
+  private initializedChainId: Promise<void>
+  private initializedAddress: Promise<void>
+  private hardfork: string
+
   public engine: ProviderEngine
 
   constructor({
     keyId,
     providerOrUrl,
-    shareNonce,
-    pollingInterval,
+    shareNonce = true,
+    pollingInterval = 4000,
     chainId,
-    chainSettings
+    chainSettings = {}
   }: KMSProviderConstructor) {
     // Init
-    this.wallets = {}
-    this.addresses = []
+    this.keyId = keyId
+    // this.address = undefined
+    // this.addressHash = undefined
     this.engine = new ProviderEngine({
       pollingInterval
     })
 
     // Validation
-    if (!HDWalletProvider.isValidProvider(providerOrUrl)) {
+    if (!KMSProvider.isValidProvider(providerOrUrl)) {
       throw new Error(
         [
           `Malformed provider URL: '${providerOrUrl}'`,
@@ -70,10 +70,8 @@ class KMSProvider {
       )
     }
 
-    // TODO: Obtain address from KMS!
-
-    const tmpAccounts = this.addresses
-    const tmpWallets = this.wallets
+    // Address
+    this.initializedAddress = this.initializeAddress()
 
     // ChainID
     if (
@@ -81,15 +79,89 @@ class KMSProvider {
       (chainSettings && typeof chainSettings.chainId !== 'undefined')
     ) {
       this.chainId = chainId || chainSettings.chainId
-      this.initialized = Promise.resolve()
+      this.initializedChainId = Promise.resolve()
     } else {
-      this.initialized = this.initialize()
+      this.initializedChainId = this.initializeChainId()
     }
 
     this.hardfork =
       chainSettings && chainSettings.hardfork
         ? chainSettings.hardfork
         : 'istanbul'
+
+    const self = this
+
+    this.engine.addProvider(
+      new HookedSubprovider({
+        getAccounts(cb: any) {
+          cb(null, [this.address])
+        },
+        async signTransaction(txParams: any, cb: any) {
+          await self.initializedAddress
+          await self.initializedChainId
+
+          const ethAddressSignature = await createSignature({
+            keyId: self.keyId,
+            message: self.addressHash,
+            address: self.address
+          })
+
+          const signedTxParams: TxData = {
+            ...txParams,
+            ...ethAddressSignature
+          }
+
+          const txOptions = createTxOptions({
+            chainId: self.chainId,
+            hardfork: self.hardfork
+          })
+
+          const tx = new Transaction(signedTxParams, txOptions)
+
+          const txHash = tx.hash(false)
+
+          const txSignature = await createSignature({
+            keyId: self.keyId,
+            message: txHash,
+            address: self.address
+          })
+
+          tx.r = txSignature.r
+          tx.s = txSignature.s
+          tx.v = new BN(txSignature.v).toBuffer()
+
+          const rawTx = `0x${tx.serialize().toString('hex')}`
+
+          cb(null, rawTx)
+        },
+
+        async signMessage({ data, from }: any, cb: any) {
+          await self.initializedAddress
+
+          if (!data) {
+            cb('No data to sign')
+          }
+          if (self.address !== from) {
+            cb('Account not found')
+          }
+
+          const dataBuff = EthUtil.toBuffer(data)
+          const msgHashBuff = EthUtil.hashPersonalMessage(dataBuff)
+
+          const { r, s, v } = await createSignature({
+            keyId: self.keyId,
+            message: msgHashBuff,
+            address: self.address
+          })
+          const rpcSig = EthUtil.toRpcSig(v, r, s)
+
+          cb(null, rpcSig)
+        },
+        signPersonalMessage(...args: any[]) {
+          this.signMessage(...args)
+        }
+      })
+    )
 
     // Nonce
     !shareNonce
@@ -117,14 +189,18 @@ class KMSProvider {
       this.engine.addProvider(new ProviderSubprovider(provider))
     }
 
-    // Required by the provider engine.
     this.engine.start((err: any) => {
       if (err) throw err
     })
   }
-  // End of constructor
 
-  private initialize(): Promise<void> {
+  private async initializeAddress(): Promise<void> {
+    const KMSKey = await getPublicKey(this.keyId)
+    this.address = getEthereumAddress(KMSKey.PublicKey)
+    this.addressHash = EthUtil.keccak(Buffer.from(this.address))
+  }
+
+  private initializeChainId(): Promise<void> {
     return new Promise((resolve, reject) => {
       this.engine.sendAsync(
         {
@@ -158,7 +234,7 @@ class KMSProvider {
     payload: JSONRPCRequestPayload,
     callback: JSONRPCErrorCallback
   ): void {
-    this.initialized.then(() => {
+    Promise.all([this.initializedChainId, this.initializedAddress]).then(() => {
       this.engine.send(payload, callback)
     })
   }
@@ -167,9 +243,24 @@ class KMSProvider {
     payload: JSONRPCRequestPayload,
     callback: JSONRPCErrorCallback
   ): void {
-    this.initialized.then(() => {
+    Promise.all([this.initializedChainId, this.initializedAddress]).then(() => {
       this.engine.sendAsync(payload, callback)
     })
+  }
+
+  public getAddress(): string {
+    return this.address
+  }
+
+  public static isValidProvider(provider: string | any): boolean {
+    const validProtocols = ['http:', 'https:', 'ws:', 'wss:']
+
+    if (typeof provider === 'string') {
+      const url = new URL(provider.toLowerCase())
+      return !!validProtocols.includes(url.protocol || '')
+    }
+
+    return true
   }
 }
 

@@ -1,17 +1,16 @@
 import { KMS } from 'aws-sdk'
-
-export type SignParams = Pick<KMS.SignRequest, 'KeyId' | 'Message'>
+import { SignParams } from './types'
 
 export const kms = new KMS()
 
-export const getPublicKey = async (KeyId: KMS.GetPublicKeyRequest['KeyId']) =>
+export const getPublicKey = (KeyId: KMS.GetPublicKeyRequest['KeyId']) =>
   kms.getPublicKey({ KeyId }).promise()
 
-export const sign = async ({ KeyId, Message }: SignParams) => {
-  return await kms
+export const sign = ({ keyId, message }: SignParams) => {
+  return kms
     .sign({
-      KeyId,
-      Message,
+      KeyId: keyId,
+      Message: message,
       SigningAlgorithm: 'ECDSA_SHA-256',
       MessageType: 'DIGEST'
     })
