@@ -7,7 +7,7 @@ import Common from 'ethereumjs-common'
 import { TransactionOptions } from 'ethereumjs-tx'
 
 import { sign } from './kms'
-import { CreateSignatureParams, SignParams } from './types'
+import { ChainSettings, CreateSignatureParams, SignParams } from './types'
 
 const KNOWN_CHAIN_IDS = new Set([1, 3, 4, 5, 42])
 
@@ -32,20 +32,7 @@ const recoverPubKeyFromSig = (msg: Buffer, r: BN, s: BN, v: number) => {
   return RecoveredEthAddr
 }
 
-export const getEthereumAddress = (publicKey: KMS.PublicKeyType): string => {
-  const res = EcdsaPubKey.decode(publicKey, 'der')
-  let pubKeyBuffer: Buffer = res.pubKey.data
-
-  pubKeyBuffer = pubKeyBuffer.slice(1, pubKeyBuffer.length)
-
-  const address = keccak256(pubKeyBuffer)
-  const buf2 = Buffer.from(address, 'hex')
-  const EthAddr = '0x' + buf2.slice(-20).toString('hex')
-
-  return EthAddr
-}
-
-export const getRS = async (signParams: SignParams) => {
+const getRS = async (signParams: SignParams) => {
   const signature = await sign(signParams)
 
   if (signature.Signature == undefined) {
@@ -70,7 +57,7 @@ export const getRS = async (signParams: SignParams) => {
   return { r, s }
 }
 
-export const getV = (msg: Buffer, r: BN, s: BN, expectedEthAddr: string) => {
+const getV = (msg: Buffer, r: BN, s: BN, expectedEthAddr: string) => {
   let v = 27
   let pubKey = recoverPubKeyFromSig(msg, r, s, v)
   if (pubKey != expectedEthAddr) {
@@ -79,6 +66,19 @@ export const getV = (msg: Buffer, r: BN, s: BN, expectedEthAddr: string) => {
   }
 
   return v
+}
+
+export const getEthereumAddress = (publicKey: KMS.PublicKeyType): string => {
+  const res = EcdsaPubKey.decode(publicKey, 'der')
+  let pubKeyBuffer: Buffer = res.pubKey.data
+
+  pubKeyBuffer = pubKeyBuffer.slice(1, pubKeyBuffer.length)
+
+  const address = keccak256(pubKeyBuffer)
+  const buf2 = Buffer.from(address, 'hex')
+  const EthAddr = '0x' + buf2.slice(-20).toString('hex')
+
+  return EthAddr
 }
 
 export const createSignature = async ({
@@ -96,13 +96,7 @@ export const createSignature = async ({
   }
 }
 
-export const createTxOptions = ({
-  chainId,
-  hardfork
-}: {
-  chainId: number
-  hardfork: string
-}) => {
+export const createTxOptions = ({ chainId, hardfork }: ChainSettings) => {
   const chain = chainId
   let txOptions: TransactionOptions
 

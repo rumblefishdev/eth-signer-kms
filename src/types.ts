@@ -8,3 +8,17 @@ export type SignParams = {
 export type CreateSignatureParams = SignParams & {
   address: string
 }
+
+export type ChainSettings = {
+  hardfork?: string
+  chainId?: number
+}
+
+export type KMSProviderConstructor = {
+  keyId: KMS.KeyIdType
+  providerOrUrl: string
+  shareNonce?: boolean
+  pollingInterval?: number
+  chainId?: number
+  chainSettings?: ChainSettings
+}

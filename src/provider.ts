@@ -6,8 +6,6 @@ import ProviderSubprovider from 'web3-provider-engine/subproviders/provider'
 import RpcProvider from 'web3-provider-engine/subproviders/rpc'
 import WebsocketProvider from 'web3-provider-engine/subproviders/websocket'
 
-import { CommonOptions } from '@truffle/hdwallet-provider/dist/constructor/Constructor'
-
 import type {
   JSONRPCRequestPayload,
   JSONRPCErrorCallback,
@@ -21,14 +19,8 @@ import { URL } from 'url'
 import { KeyIdType } from 'aws-sdk/clients/kms'
 
 import { getPublicKey } from './kms'
+import { KMSProviderConstructor } from './types'
 import { createTxOptions, getEthereumAddress, createSignature } from './eth'
-
-type KMSProviderConstructor = Omit<
-  CommonOptions,
-  'addressIndex' | 'derivationPath' | 'numberOfAddresses'
-> & {
-  keyId: KeyIdType
-}
 
 const singletonNonceSubProvider = new NonceSubProvider()
 
