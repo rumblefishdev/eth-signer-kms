@@ -1,6 +1,6 @@
 {
   "name": "@rumblefishdev/eth-signer-kms",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "",
   "main": "index.js",
   "scripts": {
