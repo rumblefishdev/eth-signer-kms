@@ -2,11 +2,11 @@
   "name": "@rumblefishdev/eth-signer-kms",
   "version": "1.0.8",
   "description": "",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "AWS_SDK_LOAD_CONFIG=true AWS_PROFILE=rf ts-node script.ts",
-    "build": "tsc",
+    "build": "rm -rf dist && tsc",
     "prepublish": "tsc"
   },
   "repository": {
