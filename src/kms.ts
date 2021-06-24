@@ -11,7 +11,7 @@ export const sign = ({ keyId, message }: SignParams) => {
     .sign({
       KeyId: keyId,
       Message: message,
-      SigningAlgorithm: 'ECDSA_SHA-256',
+      SigningAlgorithm: 'ECDSA_SHA_256',
       MessageType: 'DIGEST'
     })
     .promise()

@@ -22,6 +22,16 @@ const EcdsaPubKey = asn1.define('EcdsaPubKey', function (this: any) {
   )
 })
 
+const recoverPubKeyFromSig = (msg: Buffer, r: BN, s: BN, v: number) => {
+  const rBuffer = r.toBuffer()
+  const sBuffer = s.toBuffer()
+  const pubKey = EthUtil.ecrecover(msg, v, rBuffer, sBuffer)
+  const addrBuf = EthUtil.pubToAddress(pubKey)
+  const RecoveredEthAddr = EthUtil.bufferToHex(addrBuf)
+
+  return RecoveredEthAddr
+}
+
 export const getEthereumAddress = (publicKey: KMS.PublicKeyType): string => {
   const res = EcdsaPubKey.decode(publicKey, 'der')
   let pubKeyBuffer: Buffer = res.pubKey.data
@@ -35,7 +45,6 @@ export const getEthereumAddress = (publicKey: KMS.PublicKeyType): string => {
   return EthAddr
 }
 
-//findEthereumSig
 export const getRS = async (signParams: SignParams) => {
   const signature = await sign(signParams)
 
@@ -61,16 +70,6 @@ export const getRS = async (signParams: SignParams) => {
   return { r, s }
 }
 
-const recoverPubKeyFromSig = (msg: Buffer, r: BN, s: BN, v: number) => {
-  const rBuffer = r.toBuffer()
-  const sBuffer = s.toBuffer()
-  const pubKey = EthUtil.ecrecover(msg, v, rBuffer, sBuffer)
-  const addrBuf = EthUtil.pubToAddress(pubKey)
-  const RecoveredEthAddr = EthUtil.bufferToHex(addrBuf)
-
-  return RecoveredEthAddr
-}
-//findRightKey
 export const getV = (msg: Buffer, r: BN, s: BN, expectedEthAddr: string) => {
   let v = 27
   let pubKey = recoverPubKeyFromSig(msg, r, s, v)

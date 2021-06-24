@@ -51,15 +51,11 @@ class KMSProvider {
     chainId,
     chainSettings = {}
   }: KMSProviderConstructor) {
-    // Init
     this.keyId = keyId
-    // this.address = undefined
-    // this.addressHash = undefined
     this.engine = new ProviderEngine({
       pollingInterval
     })
 
-    // Validation
     if (!KMSProvider.isValidProvider(providerOrUrl)) {
       throw new Error(
         [
@@ -70,10 +66,8 @@ class KMSProvider {
       )
     }
 
-    // Address
     this.initializedAddress = this.initializeAddress()
 
-    // ChainID
     if (
       typeof chainId !== 'undefined' ||
       (chainSettings && typeof chainSettings.chainId !== 'undefined')
@@ -83,7 +77,6 @@ class KMSProvider {
     } else {
       this.initializedChainId = this.initializeChainId()
     }
-
     this.hardfork =
       chainSettings && chainSettings.hardfork
         ? chainSettings.hardfork
@@ -93,8 +86,9 @@ class KMSProvider {
 
     this.engine.addProvider(
       new HookedSubprovider({
-        getAccounts(cb: any) {
-          cb(null, [this.address])
+        async getAccounts(cb: any) {
+          await self.initializedAddress
+          cb(null, [self.address])
         },
         async signTransaction(txParams: any, cb: any) {
           await self.initializedAddress
@@ -132,7 +126,11 @@ class KMSProvider {
 
           const rawTx = `0x${tx.serialize().toString('hex')}`
 
-          cb(null, rawTx)
+          if (cb) {
+            cb(null, rawTx)
+          } else {
+            return rawTx
+          }
         },
 
         async signMessage({ data, from }: any, cb: any) {
@@ -163,14 +161,12 @@ class KMSProvider {
       })
     )
 
-    // Nonce
     !shareNonce
       ? this.engine.addProvider(new NonceSubProvider())
       : this.engine.addProvider(singletonNonceSubProvider)
 
     this.engine.addProvider(new FiltersSubprovider())
 
-    // Provider protocol
     if (typeof providerOrUrl === 'string') {
       const url = providerOrUrl
 
@@ -195,9 +191,17 @@ class KMSProvider {
   }
 
   private async initializeAddress(): Promise<void> {
-    const KMSKey = await getPublicKey(this.keyId)
-    this.address = getEthereumAddress(KMSKey.PublicKey)
-    this.addressHash = EthUtil.keccak(Buffer.from(this.address))
+    return new Promise(async (resolve, reject) => {
+      try {
+        const KMSKey = await getPublicKey(this.keyId)
+        this.address = getEthereumAddress(KMSKey.PublicKey)
+        this.addressHash = EthUtil.keccak(Buffer.from(this.address))
+
+        resolve()
+      } catch (e) {
+        reject(e)
+      }
+    })
   }
 
   private initializeChainId(): Promise<void> {
@@ -235,7 +239,7 @@ class KMSProvider {
     callback: JSONRPCErrorCallback
   ): void {
     Promise.all([this.initializedChainId, this.initializedAddress]).then(() => {
-      this.engine.send(payload, callback)
+      this.engine.sendAsync(payload, callback)
     })
   }
 
@@ -248,7 +252,8 @@ class KMSProvider {
     })
   }
 
-  public getAddress(): string {
+  public async getAddress(): Promise<string> {
+    await this.initializedAddress
     return this.address
   }
 
