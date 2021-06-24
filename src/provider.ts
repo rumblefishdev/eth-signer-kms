@@ -24,7 +24,7 @@ import { createTxOptions, getEthereumAddress, createSignature } from './eth'
 
 const singletonNonceSubProvider = new NonceSubProvider()
 
-class KMSProvider {
+export class KMSProvider {
   private keyId: KeyIdType
   private address: string
   private addressHash: Buffer
@@ -260,5 +260,3 @@ class KMSProvider {
     return true
   }
 }
-
-export = KMSProvider
