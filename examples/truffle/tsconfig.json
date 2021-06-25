@@ -1,0 +1,25 @@
+{
+    "compilerOptions": {
+        "lib": [
+            "ES2018",
+            "DOM"
+        ],
+        "skipLibCheck": true,
+        "strict": false,
+        "module": "CommonJS",
+        "moduleResolution": "node",
+        "target": "ES2018",
+        "sourceMap": true,
+        "esModuleInterop": true,
+        "resolveJsonModule": true,
+        "strictNullChecks": false,
+        "typeRoots": [
+            "./node_modules/@types",
+            "./node_modules"
+        ],
+        "types": [
+            "node",
+            "truffle-typings"
+        ]
+    },
+}
