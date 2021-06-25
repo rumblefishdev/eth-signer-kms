@@ -33,10 +33,10 @@ KMSProvider can be used as a standalone Web3 provider and within Truffle config.
 | Parameter | Type | Default | Required | Description |
 | ------ | ---- | ------- | ----------- | ----------- |
 |`keyId`|`string`| `null`| [x] | Key ID of AWS KMS managed private key. |
-| `providerOrUrl` | `string|object` | `null` | [x] | [Official doc](https://github.com/trufflesuite/truffle/blob/develop/packages/hdwallet-provider/README.md#instantiation) |
+| `providerOrUrl` | `string/object` | `null` | [x] | [Official doc](https://github.com/trufflesuite/truffle/blob/develop/packages/hdwallet-provider/README.md#instantiation) |
 | `shareNonce` | `boolean` | `true` | [ ] | [Official doc](https://github.com/trufflesuite/truffle/blob/develop/packages/hdwallet-provider/README.md#instantiation) |
 | `pollingInterval` | `number` | `4000` | [ ] | [Official doc](https://github.com/trufflesuite/truffle/blob/develop/packages/hdwallet-provider/README.md#instantiation) |
-| `chainId` | `number|string` | `undefined` | [ ] | [Official doc](https://github.com/trufflesuite/truffle/blob/develop/packages/hdwallet-provider/README.md#instantiation) |
+| `chainId` | `number/string` | `undefined` | [ ] | [Official doc](https://github.com/trufflesuite/truffle/blob/develop/packages/hdwallet-provider/README.md#instantiation) |
 
 ## Examples
 [Truffle usage example - TODO](https://github.com/rumblefishdev/eth-signer-kms)
