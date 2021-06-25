@@ -14,7 +14,7 @@
   "license": "ISC",
   "devDependencies": {
     "@openzeppelin/contracts": "^4.1.0",
-    "@rumblefishdev/eth-signer-kms": "^1.0.9",
+    "@rumblefishdev/eth-signer-kms": "^1.0.10",
     "@typechain/truffle-v5": "^5.0.0",
     "@types/bn.js": "^4.11.6",
     "@types/chai": "^4.2.19",
