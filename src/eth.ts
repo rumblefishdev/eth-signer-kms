@@ -68,7 +68,9 @@ const getV = (msg: Buffer, r: BN, s: BN, expectedEthAddr: string) => {
   return v
 }
 
-export const getEthereumAddress = (publicKey: KMS.PublicKeyType): string => {
+export const getEthAddressFromPublicKey = (
+  publicKey: KMS.PublicKeyType
+): string => {
   const res = EcdsaPubKey.decode(publicKey, 'der')
   let pubKeyBuffer: Buffer = res.pubKey.data
 

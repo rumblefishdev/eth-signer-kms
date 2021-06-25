@@ -18,9 +18,9 @@ import { Transaction, TxData } from 'ethereumjs-tx'
 import { URL } from 'url'
 import { KeyIdType } from 'aws-sdk/clients/kms'
 
-import { getPublicKey } from './kms'
+import { getEthAddressFromKMS } from './kms'
 import { KMSProviderConstructor } from './types'
-import { createTxOptions, getEthereumAddress, createSignature } from './eth'
+import { createTxOptions, createSignature } from './eth'
 
 const singletonNonceSubProvider = new NonceSubProvider()
 
@@ -185,8 +185,7 @@ export class KMSProvider {
   private async initializeAddress(): Promise<void> {
     return new Promise(async (resolve, reject) => {
       try {
-        const KMSKey = await getPublicKey(this.keyId)
-        this.address = getEthereumAddress(KMSKey.PublicKey)
+        this.address = await getEthAddressFromKMS(this.keyId)
         this.addressHash = EthUtil.keccak(Buffer.from(this.address))
 
         resolve()
