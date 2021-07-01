@@ -35,13 +35,13 @@ https://github.com/ethereumjs/ethereumjs-monorepo
 |`keyId`|`string`| `null`| [x] | Key ID of AWS KMS managed private key |
 | `providerOrUrl` | `string/object` | `null` | [x] | [Official doc](https://github.com/trufflesuite/truffle/blob/develop/packages/hdwallet-provider/README.md#instantiation) |
 |`chainSettings` | `Common` | `{}` | [ ] | Common object used to configure tx options. If chainId is not passed, it will be obtained automatically via `eth_chainId`. For details instructions please refer to [Common](https://github.com/ethereumjs/ethereumjs-monorepo/tree/master/packages/common) and [Tx]() official docs|
-| `awsTimeout` | `number` | `4900` | [ ] | Time in ms after which AWS requests will time out. Implemented to indicate AWS error before `truffle` times out with default message. Pass `null` to turn it off|
 | `shareNonce` | `boolean` | `true` | [ ] | [Official doc](https://github.com/trufflesuite/truffle/blob/develop/packages/hdwallet-provider/README.md#instantiation) |
 | `pollingInterval` | `number` | `4000` | [ ] | [Official doc](https://github.com/trufflesuite/truffle/blob/develop/packages/hdwallet-provider/README.md#instantiation) |
 
 ## Examples
-[Truffle usage example - TODO](https://github.com/rumblefishdev/eth-signer-kms)
-[Web3 provider usage - TODO](https://github.com/rumblefishdev/eth-signer-kms)
+[Truffle usage example](https://github.com/rumblefishdev/eth-signer-kms/tree/master/examples/truffle)
+
+[Nodejs + ethersjs usage example ](https://github.com/rumblefishdev/eth-signer-kms/tree/master/examples/ethers)
 
 ## Credits:
 
