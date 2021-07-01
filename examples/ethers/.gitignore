@@ -1,0 +1,5 @@
+migrations
+build
+types
+node_modules
+.env
