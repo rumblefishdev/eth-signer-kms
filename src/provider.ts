@@ -23,26 +23,22 @@ import { getEthAddressFromKMS } from './kms'
 import { KMSProviderConstructor } from './types'
 
 const singletonNonceSubProvider = new NonceSubProvider()
-
 export class KMSProvider {
   private keyId: KeyIdType
   private address: string
   private chainId: number
-  private awsTimeout: number
   private initializedChainId: Promise<void>
   private initializedAddress: Promise<void>
   public engine: ProviderEngine
 
   constructor({
     keyId,
-    awsTimeout = 4900,
     providerOrUrl,
     shareNonce = true,
     pollingInterval = 4000,
     chainSettings = {}
   }: KMSProviderConstructor) {
     this.keyId = keyId
-    this.awsTimeout = awsTimeout
     this.engine = new ProviderEngine({
       pollingInterval
     })
@@ -180,7 +176,7 @@ export class KMSProvider {
   private async initializeAddress(): Promise<void> {
     return new Promise(async (resolve, reject) => {
       try {
-        this.address = await getEthAddressFromKMS(this.keyId, this.awsTimeout)
+        this.address = await getEthAddressFromKMS(this.keyId)
         resolve()
       } catch (e) {
         reject(e)

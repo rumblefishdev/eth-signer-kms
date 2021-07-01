@@ -18,7 +18,6 @@ export type ChainSettings = Omit<CommonOpts, 'chain'> & {
 export type KMSProviderConstructor = {
   keyId: KMS.KeyIdType
   providerOrUrl: string
-  awsTimeout?: number
   shareNonce?: boolean
   pollingInterval?: number
   chainSettings?: ChainSettings

@@ -4,33 +4,13 @@ import { getEthAddressFromPublicKey } from './eth'
 
 export const kms = new KMS()
 
-const AWSTimeout = <T extends any>(promise: T, ms?: number): T => {
-  if (ms) {
-    const timeout = new Promise(() => {
-      const id = setTimeout(() => {
-        clearTimeout(id)
-        throw new Error(
-          'AWS KMS request failed. Did you set AWS credentials/region config?'
-        )
-      }, ms)
-    })
-
-    return Promise.race([timeout, promise]) as T
-  } else {
-    return promise
-  }
-}
-
-export const getPublicKey = (
-  KeyId: KMS.GetPublicKeyRequest['KeyId'],
-  awsTimeout?: number
-) => AWSTimeout(kms.getPublicKey({ KeyId }).promise(), awsTimeout)
+export const getPublicKey = (KeyId: KMS.GetPublicKeyRequest['KeyId']) =>
+  kms.getPublicKey({ KeyId }).promise()
 
 export const getEthAddressFromKMS = async (
-  keyId: KMS.GetPublicKeyRequest['KeyId'],
-  awsTimeout?: number
+  keyId: KMS.GetPublicKeyRequest['KeyId']
 ) => {
-  const KMSKey = await getPublicKey(keyId, awsTimeout)
+  const KMSKey = await getPublicKey(keyId)
 
   return getEthAddressFromPublicKey(KMSKey.PublicKey)
 }
