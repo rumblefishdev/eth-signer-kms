@@ -3,23 +3,13 @@
     "version": "1.0.0",
     "description": "Example project utilizing KMS Provider with ethers.js",
     "scripts": {
-        "generate-types": "typechain --target=ethers-v5 './build/contracts/*.json' && typechain --target=truffle-v5 './build/contracts/*.json'",
-        "migrate": "tsc -p ./tsconfig.migrate.json --outDir ./migrations && truffle migrate",
-        "compile": "truffle compile && npm run generate-types",
-        "clean": "rm -rf ./migrations && rm -rf ./build && rm -rf ./types",
         "start": "ts-node index.ts"
     },
     "author": "",
     "license": "ISC",
     "devDependencies": {
-        "@openzeppelin/contracts": "^4.1.0",
-        "@typechain/ethers-v5": "^7.0.1",
-        "@typechain/truffle-v5": "^5.0.0",
         "dotenv": "^10.0.0",
-        "truffle": "^5.3.13",
-        "truffle-typings": "^1.0.8",
         "ts-node": "^10.0.0",
-        "typechain": "^5.1.1",
         "typescript": "^4.3.4"
     },
     "dependencies": {
