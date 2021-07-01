@@ -13,15 +13,5 @@
         "esModuleInterop": true,
         "resolveJsonModule": true,
         "strictNullChecks": false,
-        "typeRoots": [
-            "./node_modules/@types",
-            "./node_modules",
-            "./@types/",
-            "./types",
-        ],
-        "types": [
-            "node",
-            "truffle-typings"
-        ]
     },
 }
