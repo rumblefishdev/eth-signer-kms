@@ -11,39 +11,38 @@ import type {
   JSONRPCErrorCallback,
   JSONRPCResponsePayload
 } from 'ethereum-protocol'
-import { BN } from 'ethereumjs-util'
+import Common from '@ethereumjs/common'
 import * as EthUtil from 'ethereumjs-util'
-import { Transaction, TxData } from 'ethereumjs-tx'
+import { TransactionFactory } from '@ethereumjs/tx'
 
 import { URL } from 'url'
 import { KeyIdType } from 'aws-sdk/clients/kms'
 
-import { getPublicKey } from './kms'
+import { createSignature } from './eth'
+import { getEthAddressFromKMS } from './kms'
 import { KMSProviderConstructor } from './types'
-import { createTxOptions, getEthereumAddress, createSignature } from './eth'
 
 const singletonNonceSubProvider = new NonceSubProvider()
 
 export class KMSProvider {
   private keyId: KeyIdType
   private address: string
-  private addressHash: Buffer
-  private chainId?: number
+  private chainId: number
+  private awsTimeout: number
   private initializedChainId: Promise<void>
   private initializedAddress: Promise<void>
-  private hardfork: string
-
   public engine: ProviderEngine
 
   constructor({
     keyId,
+    awsTimeout = 4900,
     providerOrUrl,
     shareNonce = true,
     pollingInterval = 4000,
-    chainId,
     chainSettings = {}
   }: KMSProviderConstructor) {
     this.keyId = keyId
+    this.awsTimeout = awsTimeout
     this.engine = new ProviderEngine({
       pollingInterval
     })
@@ -60,19 +59,11 @@ export class KMSProvider {
 
     this.initializedAddress = this.initializeAddress()
 
-    if (
-      typeof chainId !== 'undefined' ||
-      (chainSettings && typeof chainSettings.chainId !== 'undefined')
-    ) {
-      this.chainId = chainId || chainSettings.chainId
+    if (chainSettings.chain) {
       this.initializedChainId = Promise.resolve()
     } else {
       this.initializedChainId = this.initializeChainId()
     }
-    this.hardfork =
-      chainSettings && chainSettings.hardfork
-        ? chainSettings.hardfork
-        : 'istanbul'
 
     const self = this
 
@@ -86,37 +77,36 @@ export class KMSProvider {
           await self.initializedAddress
           await self.initializedChainId
 
-          const ethAddressSignature = await createSignature({
-            keyId: self.keyId,
-            message: self.addressHash,
-            address: self.address
+          txParams.gasLimit = txParams.gas
+          delete txParams.gas
+
+          const txOptions = new Common({
+            ...chainSettings,
+            chain: chainSettings.chain || self.chainId
           })
 
-          const signedTxParams: TxData = {
-            ...txParams,
-            ...ethAddressSignature
-          }
-
-          const txOptions = createTxOptions({
-            chainId: self.chainId,
-            hardfork: self.hardfork
+          const tx = TransactionFactory.fromTxData(txParams, {
+            common: txOptions
           })
-
-          const tx = new Transaction(signedTxParams, txOptions)
-
-          const txHash = tx.hash(false)
 
           const txSignature = await createSignature({
             keyId: self.keyId,
-            message: txHash,
-            address: self.address
+            message: tx.getMessageToSign(),
+            address: self.address,
+            txOpts: txOptions
           })
 
-          tx.r = txSignature.r
-          tx.s = txSignature.s
-          tx.v = new BN(txSignature.v).toBuffer()
+          const signedTx = TransactionFactory.fromTxData(
+            {
+              ...txParams,
+              ...txSignature
+            },
+            {
+              common: txOptions
+            }
+          )
 
-          const rawTx = `0x${tx.serialize().toString('hex')}`
+          const rawTx = `0x${signedTx.serialize().toString('hex')}`
 
           if (cb) {
             cb(null, rawTx)
@@ -124,9 +114,10 @@ export class KMSProvider {
             return rawTx
           }
         },
-
+        // Uses pre EIP 155 v calculation
         async signMessage({ data, from }: any, cb: any) {
           await self.initializedAddress
+          await self.initializedChainId
 
           if (!data) {
             cb('No data to sign')
@@ -143,11 +134,15 @@ export class KMSProvider {
             message: msgHashBuff,
             address: self.address
           })
-          const rpcSig = EthUtil.toRpcSig(v, r, s)
+
+          const rpcSig = EthUtil.toRpcSig(v.toNumber(), r, s)
 
           cb(null, rpcSig)
         },
         signPersonalMessage(...args: any[]) {
+          this.signMessage(...args)
+        },
+        signTypedMessage(...args: any[]) {
           this.signMessage(...args)
         }
       })
@@ -185,10 +180,7 @@ export class KMSProvider {
   private async initializeAddress(): Promise<void> {
     return new Promise(async (resolve, reject) => {
       try {
-        const KMSKey = await getPublicKey(this.keyId)
-        this.address = getEthereumAddress(KMSKey.PublicKey)
-        this.addressHash = EthUtil.keccak(Buffer.from(this.address))
-
+        this.address = await getEthAddressFromKMS(this.keyId, this.awsTimeout)
         resolve()
       } catch (e) {
         reject(e)

@@ -3,13 +3,9 @@ import * as asn1 from 'asn1.js'
 import { keccak256 } from 'js-sha3'
 import { BN } from 'ethereumjs-util'
 import * as EthUtil from 'ethereumjs-util'
-import Common from 'ethereumjs-common'
-import { TransactionOptions } from 'ethereumjs-tx'
 
 import { sign } from './kms'
-import { ChainSettings, CreateSignatureParams, SignParams } from './types'
-
-const KNOWN_CHAIN_IDS = new Set([1, 3, 4, 5, 42])
+import { CreateSignatureParams, SignParams } from './types'
 
 const EcdsaSigAsnParse = asn1.define('EcdsaSig', function (this: any) {
   this.seq().obj(this.key('r').int(), this.key('s').int())
@@ -22,10 +18,16 @@ const EcdsaPubKey = asn1.define('EcdsaPubKey', function (this: any) {
   )
 })
 
-const recoverPubKeyFromSig = (msg: Buffer, r: BN, s: BN, v: number) => {
+export const recoverPubKeyFromSig = (
+  msg: Buffer,
+  r: BN,
+  s: BN,
+  v: number,
+  chainId?: number | undefined
+) => {
   const rBuffer = r.toBuffer()
   const sBuffer = s.toBuffer()
-  const pubKey = EthUtil.ecrecover(msg, v, rBuffer, sBuffer)
+  const pubKey = EthUtil.ecrecover(msg, v, rBuffer, sBuffer, chainId)
   const addrBuf = EthUtil.pubToAddress(pubKey)
   const RecoveredEthAddr = EthUtil.bufferToHex(addrBuf)
 
@@ -64,11 +66,12 @@ const getV = (msg: Buffer, r: BN, s: BN, expectedEthAddr: string) => {
     v = 28
     pubKey = recoverPubKeyFromSig(msg, r, s, v)
   }
-
-  return v
+  return new BN(v)
 }
 
-export const getEthereumAddress = (publicKey: KMS.PublicKeyType): string => {
+export const getEthAddressFromPublicKey = (
+  publicKey: KMS.PublicKeyType
+): string => {
   const res = EcdsaPubKey.decode(publicKey, 'der')
   let pubKeyBuffer: Buffer = res.pubKey.data
 
@@ -81,37 +84,20 @@ export const getEthereumAddress = (publicKey: KMS.PublicKeyType): string => {
   return EthAddr
 }
 
-export const createSignature = async ({
-  keyId,
-  message,
-  address
-}: CreateSignatureParams) => {
+export const createSignature = async (sigParams: CreateSignatureParams) => {
+  const { keyId, message, address, txOpts } = sigParams
+
   const { r, s } = await getRS({ keyId, message })
-  const v = getV(message, r, s, address)
+  let v = getV(message, r, s, address)
+
+  // unsignedTxImplementsEIP155
+  if (txOpts && txOpts.gteHardfork('spuriousDragon')) {
+    v = v.iadd(txOpts.chainIdBN().muln(2).addn(8))
+  }
 
   return {
     r: r.toBuffer(),
     s: s.toBuffer(),
     v: v
   }
-}
-
-export const createTxOptions = ({ chainId, hardfork }: ChainSettings) => {
-  const chain = chainId
-  let txOptions: TransactionOptions
-
-  if (typeof chain !== 'undefined' && KNOWN_CHAIN_IDS.has(chain)) {
-    txOptions = { chain }
-  } else if (typeof chain !== 'undefined') {
-    const common = Common.forCustomChain(
-      1,
-      {
-        name: 'custom chain',
-        chainId: chain
-      },
-      hardfork
-    )
-    txOptions = { common }
-  }
-  return txOptions
 }
