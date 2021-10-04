@@ -59,15 +59,20 @@ const getRS = async (signParams: SignParams) => {
   return { r, s }
 }
 
-const getV = (msg: Buffer, r: BN, s: BN, expectedEthAddr: string) => {
-  let v = 27
-  let pubKey = recoverPubKeyFromSig(msg, r, s, v)
-  if (pubKey != expectedEthAddr) {
-    v = 28
-    pubKey = recoverPubKeyFromSig(msg, r, s, v)
+const getV = (
+  msg: Buffer,
+  r: EthUtil.BN,
+  s: EthUtil.BN,
+  expectedEthAddr: string
+) => {
+  let v = 27;
+  let pubKey = recoverPubKeyFromSig(msg, r, s, v);
+  if (pubKey !== expectedEthAddr) {
+    v = 28;
+    pubKey = recoverPubKeyFromSig(msg, r, s, v);
   }
-  return new BN(v)
-}
+  return new EthUtil.BN(v - 27);
+};
 
 export const getEthAddressFromPublicKey = (
   publicKey: KMS.PublicKeyType
