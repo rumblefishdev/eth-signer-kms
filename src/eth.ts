@@ -96,7 +96,7 @@ export const createSignature = async (sigParams: CreateSignatureParams) => {
   let v = getV(message, r, s, address)
 
   // unsignedTxImplementsEIP155
-  if (txOpts && txOpts.gteHardfork('spuriousDragon')) {
+  if (txOpts && txOpts.gteHardfork('spuriousDragon') && !txOpts.gteHardfork('london')) {
     v = v.iadd(txOpts.chainIdBN().muln(2).addn(8))
   }
 
