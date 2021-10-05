@@ -1,6 +1,5 @@
 import ProviderEngine from 'web3-provider-engine'
 import FiltersSubprovider from 'web3-provider-engine/subproviders/filters'
-import NonceSubProvider from 'web3-provider-engine/subproviders/nonce-tracker'
 import HookedSubprovider from 'web3-provider-engine/subproviders/hooked-wallet'
 import ProviderSubprovider from 'web3-provider-engine/subproviders/provider'
 import RpcProvider from 'web3-provider-engine/subproviders/rpc'
@@ -22,7 +21,6 @@ import { createSignature } from './eth'
 import { getEthAddressFromKMS } from './kms'
 import { KMSProviderConstructor } from './types'
 
-const singletonNonceSubProvider = new NonceSubProvider()
 export class KMSProvider {
   private keyId: KeyIdType
   private address: string
@@ -34,7 +32,6 @@ export class KMSProvider {
   constructor({
     keyId,
     providerOrUrl,
-    shareNonce = true,
     pollingInterval = 4000,
     chainSettings = {}
   }: KMSProviderConstructor) {
@@ -144,9 +141,6 @@ export class KMSProvider {
       })
     )
 
-    !shareNonce
-      ? this.engine.addProvider(new NonceSubProvider())
-      : this.engine.addProvider(singletonNonceSubProvider)
 
     this.engine.addProvider(new FiltersSubprovider())
 
