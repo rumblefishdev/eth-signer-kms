@@ -6,8 +6,16 @@
 1. `$ npm install`
 2. Create `.env`:
 ```
+# Original
 KEYID=your key id
 INFURAKEY=your infura API key
+
+# New
+KEYID=your key id
+PROVIDER=your provider url
+ACCESSKEYID=your aws access key id
+SECRETACCESSKEY=your aws secrect access key
+REGION=your aws service region
 ```
 3. `$ npm run compile`
 4. `$ npm run migrate -- --network ropsten`

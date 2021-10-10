@@ -10,12 +10,13 @@ module.exports = {
       provider: () =>
         new KMSProvider({
           keyId: process.env.KEYID,
-          providerOrUrl:
-            'wss://ropsten.infura.io/ws/v3/' + process.env.INFURAKEY
+          providerOrUrl: process.env.PROVIDER,
+          accessKeyId: process.env.ACCESSKEYID,
+          secretAccessKey: process.env.SECRETACCESSKEY,
+          region: process.env.REGION
         }),
       network_id: 3,
       confirmations: 2,
-      timeoutBlocks: 200,
       skipDryRun: true
     }
   },

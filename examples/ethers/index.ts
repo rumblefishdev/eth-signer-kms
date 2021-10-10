@@ -10,7 +10,10 @@ const getSigner = async () => {
     console.log('Initiating KMSProvider...')
     const kmsProvider = new KMSProvider({
       keyId: process.env.KEYID,
-      providerOrUrl: 'wss://ropsten.infura.io/ws/v3/' + process.env.INFURAKEY
+      providerOrUrl: process.env.PROVIDER,
+      accessKeyId: process.env.ACCESSKEYID,
+      secretAccessKey: process.env.SECRETACCESSKEY,
+      region: process.env.REGION
     })
 
     console.log('KMSProvider initialized')
