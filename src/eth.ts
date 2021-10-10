@@ -34,8 +34,13 @@ export const recoverPubKeyFromSig = (
   return RecoveredEthAddr
 }
 
-const getRS = async (signParams: SignParams) => {
-  const signature = await sign(signParams)
+const getRS = async (
+  signParams: SignParams,
+  accessKeyId: string,
+  secretAccessKey: string,
+  region: string
+) => {
+  const signature = await sign(signParams, accessKeyId, secretAccessKey, region)
 
   if (signature.Signature == undefined) {
     throw new Error('Signature is undefined.')
@@ -65,14 +70,14 @@ const getV = (
   s: EthUtil.BN,
   expectedEthAddr: string
 ) => {
-  let v = 27;
-  let pubKey = recoverPubKeyFromSig(msg, r, s, v);
+  let v = 27
+  let pubKey = recoverPubKeyFromSig(msg, r, s, v)
   if (pubKey !== expectedEthAddr) {
-    v = 28;
-    pubKey = recoverPubKeyFromSig(msg, r, s, v);
+    v = 28
+    pubKey = recoverPubKeyFromSig(msg, r, s, v)
   }
-  return new EthUtil.BN(v - 27);
-};
+  return new EthUtil.BN(v - 27)
+}
 
 export const getEthAddressFromPublicKey = (
   publicKey: KMS.PublicKeyType
@@ -89,15 +94,29 @@ export const getEthAddressFromPublicKey = (
   return EthAddr
 }
 
-export const createSignature = async (sigParams: CreateSignatureParams) => {
+export const createSignature = async (
+  sigParams: CreateSignatureParams,
+  accessKeyId: string,
+  secretAccessKey: string,
+  region: string
+) => {
   const { keyId, message, address, txOpts } = sigParams
 
-  const { r, s } = await getRS({ keyId, message })
+  const { r, s } = await getRS(
+    { keyId, message },
+    accessKeyId,
+    secretAccessKey,
+    region
+  )
   let v = getV(message, r, s, address)
 
   // unsignedTxImplementsEIP155
-  if (txOpts && txOpts.gteHardfork('spuriousDragon') && !txOpts.gteHardfork('london')) {
-    v = v.iadd(txOpts.chainIdBN().muln(2).addn(8))
+  if (
+    txOpts &&
+    txOpts.gteHardfork('spuriousDragon') &&
+    !txOpts.gteHardfork('london')
+  ) {
+    v = v.iaddn(27).iadd(txOpts.chainIdBN().muln(2).addn(8))
   }
 
   return {

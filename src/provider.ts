@@ -25,6 +25,9 @@ export class KMSProvider {
   private keyId: KeyIdType
   private address: string
   private chainId: number
+  private accessKeyId: string
+  private secretAccessKey: string
+  private region: string
   private initializedChainId: Promise<void>
   private initializedAddress: Promise<void>
   public engine: ProviderEngine
@@ -32,10 +35,16 @@ export class KMSProvider {
   constructor({
     keyId,
     providerOrUrl,
+    accessKeyId,
+    secretAccessKey,
+    region,
     pollingInterval = 4000,
     chainSettings = {}
   }: KMSProviderConstructor) {
     this.keyId = keyId
+    this.accessKeyId = accessKeyId
+    this.secretAccessKey = secretAccessKey
+    this.region = region
     this.engine = new ProviderEngine({
       pollingInterval
     })
@@ -82,12 +91,17 @@ export class KMSProvider {
             common: txOptions
           })
 
-          const txSignature = await createSignature({
-            keyId: self.keyId,
-            message: tx.getMessageToSign(),
-            address: self.address,
-            txOpts: txOptions
-          })
+          const txSignature = await createSignature(
+            {
+              keyId: self.keyId,
+              message: tx.getMessageToSign(),
+              address: self.address,
+              txOpts: txOptions
+            },
+            self.accessKeyId,
+            self.secretAccessKey,
+            self.region
+          )
 
           const signedTx = TransactionFactory.fromTxData(
             {
@@ -122,11 +136,16 @@ export class KMSProvider {
           const dataBuff = EthUtil.toBuffer(data)
           const msgHashBuff = EthUtil.hashPersonalMessage(dataBuff)
 
-          const { r, s, v } = await createSignature({
-            keyId: self.keyId,
-            message: msgHashBuff,
-            address: self.address
-          })
+          const { r, s, v } = await createSignature(
+            {
+              keyId: self.keyId,
+              message: msgHashBuff,
+              address: self.address
+            },
+            self.accessKeyId,
+            self.secretAccessKey,
+            self.region
+          )
 
           const rpcSig = EthUtil.toRpcSig(v.toNumber(), r, s)
 
@@ -140,7 +159,6 @@ export class KMSProvider {
         }
       })
     )
-
 
     this.engine.addProvider(new FiltersSubprovider())
 
@@ -170,7 +188,12 @@ export class KMSProvider {
   private async initializeAddress(): Promise<void> {
     return new Promise(async (resolve, reject) => {
       try {
-        this.address = await getEthAddressFromKMS(this.keyId)
+        this.address = await getEthAddressFromKMS(
+          this.keyId,
+          this.accessKeyId,
+          this.secretAccessKey,
+          this.region
+        )
         resolve()
       } catch (e) {
         reject(e)

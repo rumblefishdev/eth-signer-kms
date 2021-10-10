@@ -17,6 +17,9 @@ export type ChainSettings = Omit<CommonOpts, 'chain'> & {
 
 export type KMSProviderConstructor = {
   keyId: KMS.KeyIdType
+  accessKeyId: string
+  secretAccessKey: string
+  region: string
   providerOrUrl: string
   shareNonce?: boolean
   pollingInterval?: number
