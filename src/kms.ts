@@ -1,5 +1,5 @@
-import { KMS } from 'aws-sdk'
-import { SignParams } from './types'
+import { KMS, AWSError } from 'aws-sdk'
+import { SignParams, PromiseResult } from './types'
 import { getEthAddressFromPublicKey } from './eth'
 
 export const kms = (
@@ -20,7 +20,8 @@ export const getPublicKey = (
   accessKeyId: string,
   secretAccessKey: string,
   region: string
-) => kms(accessKeyId, secretAccessKey, region).getPublicKey({ KeyId }).promise()
+): Promise<PromiseResult<KMS.GetPublicKeyResponse, AWSError>> =>
+  kms(accessKeyId, secretAccessKey, region).getPublicKey({ KeyId }).promise()
 
 export const getEthAddressFromKMS = async (
   keyId: KMS.GetPublicKeyRequest['KeyId'],
@@ -38,7 +39,7 @@ export const sign = (
   accessKeyId: string,
   secretAccessKey: string,
   region: string
-) => {
+): Promise<PromiseResult<KMS.SignResponse, AWSError>> => {
   const { keyId, message } = signParams
 
   return kms(accessKeyId, secretAccessKey, region)
