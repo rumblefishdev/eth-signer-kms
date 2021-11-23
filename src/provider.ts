@@ -235,9 +235,9 @@ export class KMSProvider {
     types: Record<string, Array<TypedDataField>>,
     value: Record<string, any>
   ): Promise<string> {
-    await Promise.all([this.initializedChainId, this.initializedAddress])
-    await this.initializedAddress
-    await this.initializedChainId
+     await Promise.all([this.initializedChainId, this.initializedAddress])
+     this.initializedAddress
+     this.initializedChainId
 
     const toSign = _TypedDataEncoder.hash(domain, types, value)
     const dataBuff = EthUtil.toBuffer(toSign)
