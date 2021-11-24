@@ -4,6 +4,7 @@ import HookedSubprovider from 'web3-provider-engine/subproviders/hooked-wallet'
 import ProviderSubprovider from 'web3-provider-engine/subproviders/provider'
 import RpcProvider from 'web3-provider-engine/subproviders/rpc'
 import WebsocketProvider from 'web3-provider-engine/subproviders/websocket'
+import { TypedDataDomain, TypedDataField } from '@ethersproject/abstract-signer'
 
 import type {
   JSONRPCRequestPayload,
@@ -19,12 +20,14 @@ import { KeyIdType } from 'aws-sdk/clients/kms'
 
 import { createSignature } from './eth'
 import { getEthAddressFromKMS } from './kms'
-import { KMSProviderConstructor } from './types'
+import { ChainSettings, KMSProviderConstructor } from './types'
+import { _TypedDataEncoder } from '@ethersproject/hash'
 
 export class KMSProvider {
   private keyId: KeyIdType
   private address: string
   private chainId: number
+  private chainSettings: ChainSettings
   private initializedChainId: Promise<void>
   private initializedAddress: Promise<void>
   public engine: ProviderEngine
@@ -39,6 +42,7 @@ export class KMSProvider {
     this.engine = new ProviderEngine({
       pollingInterval
     })
+    this.chainSettings = chainSettings
 
     if (!KMSProvider.isValidProvider(providerOrUrl)) {
       throw new Error(
@@ -141,7 +145,7 @@ export class KMSProvider {
       })
     )
 
-
+    
     this.engine.addProvider(new FiltersSubprovider())
 
     if (typeof providerOrUrl === 'string') {
@@ -161,7 +165,7 @@ export class KMSProvider {
       const provider = providerOrUrl
       this.engine.addProvider(new ProviderSubprovider(provider))
     }
-
+    //@ts-ignore
     this.engine.start((err: any) => {
       if (err) throw err
     })
@@ -224,6 +228,33 @@ export class KMSProvider {
     Promise.all([this.initializedChainId, this.initializedAddress]).then(() => {
       this.engine.sendAsync(payload, callback)
     })
+  }
+
+  public async signTypedData(
+    domain: TypedDataDomain,
+    types: Record<string, Array<TypedDataField>>,
+    value: Record<string, any>
+  ): Promise<string> {
+    await Promise.all([this.initializedChainId, this.initializedAddress])
+
+    const toSign = _TypedDataEncoder.hash(domain, types, value)
+    const dataBuff = EthUtil.toBuffer(toSign)
+
+    const txOptions = new Common({
+      ...this.chainSettings,
+      chain: this.chainSettings.chain || this.chainId
+    })
+
+    const { r, s, v } = await createSignature({
+      keyId: this.keyId,
+      message: dataBuff,
+      address: this.address,
+      txOpts: txOptions
+    })
+
+    const rpcSig = EthUtil.toRpcSig(v.toNumber() + 27, r, s)
+
+    return rpcSig
   }
 
   public async getAddress(): Promise<string> {
