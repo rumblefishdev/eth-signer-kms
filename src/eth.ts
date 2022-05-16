@@ -90,9 +90,9 @@ export const getEthAddressFromPublicKey = (
 }
 
 export const createSignature = async (sigParams: CreateSignatureParams) => {
-  const { keyId, message, address, txOpts } = sigParams
+  const { keyId, message, address, txOpts, kmsInstance } = sigParams
 
-  const { r, s } = await getRS({ keyId, message })
+  const { r, s } = await getRS({ keyId, message, kmsInstance })
   let v = getV(message, r, s, address)
 
   // unsignedTxImplementsEIP155

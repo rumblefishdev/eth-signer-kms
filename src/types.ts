@@ -4,6 +4,17 @@ import Common, { CommonOpts } from '@ethereumjs/common'
 export type SignParams = {
   keyId: KMS.SignRequest['KeyId']
   message: Buffer
+  kmsInstance: KMS
+}
+
+export type GetEthAddressFromKMSparams = {
+  keyId: KMS.SignRequest['KeyId']
+  kmsInstance: KMS
+}
+
+export type GetPublicKeyParams = {
+  keyId: KMS.SignRequest['KeyId']
+  kmsInstance: KMS
 }
 
 export type CreateSignatureParams = SignParams & {
@@ -21,4 +32,5 @@ export type KMSProviderConstructor = {
   shareNonce?: boolean
   pollingInterval?: number
   chainSettings?: ChainSettings
+  kmsInstance?: KMS
 }
