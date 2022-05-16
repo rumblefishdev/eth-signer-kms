@@ -14,6 +14,7 @@ import type {
 import Common from '@ethereumjs/common'
 import * as EthUtil from 'ethereumjs-util'
 import { TransactionFactory } from '@ethereumjs/tx'
+import { KMS } from 'aws-sdk'
 
 import { URL } from 'url'
 import { KeyIdType } from 'aws-sdk/clients/kms'
@@ -30,19 +31,22 @@ export class KMSProvider {
   private chainSettings: ChainSettings
   private initializedChainId: Promise<void>
   private initializedAddress: Promise<void>
+  private kmsInstance: KMS
   public engine: ProviderEngine
 
   constructor({
     keyId,
     providerOrUrl,
     pollingInterval = 4000,
-    chainSettings = {}
+    chainSettings = {},
+    kmsInstance = new KMS()
   }: KMSProviderConstructor) {
     this.keyId = keyId
     this.engine = new ProviderEngine({
       pollingInterval
     })
     this.chainSettings = chainSettings
+    this.kmsInstance = kmsInstance
 
     if (!KMSProvider.isValidProvider(providerOrUrl)) {
       throw new Error(
@@ -87,6 +91,7 @@ export class KMSProvider {
           })
 
           const txSignature = await createSignature({
+            kmsInstance: this.kmsInstance,
             keyId: self.keyId,
             message: tx.getMessageToSign(),
             address: self.address,
@@ -127,6 +132,7 @@ export class KMSProvider {
           const msgHashBuff = EthUtil.hashPersonalMessage(dataBuff)
 
           const { r, s, v } = await createSignature({
+            kmsInstance: this.kmsInstance,
             keyId: self.keyId,
             message: msgHashBuff,
             address: self.address
@@ -174,7 +180,10 @@ export class KMSProvider {
   private async initializeAddress(): Promise<void> {
     return new Promise(async (resolve, reject) => {
       try {
-        this.address = await getEthAddressFromKMS(this.keyId)
+        this.address = await getEthAddressFromKMS({
+          keyId: this.keyId,
+          kmsInstance: this.kmsInstance,
+        })
         resolve()
       } catch (e) {
         reject(e)
@@ -246,6 +255,7 @@ export class KMSProvider {
     })
 
     const { r, s, v } = await createSignature({
+      kmsInstance: this.kmsInstance,
       keyId: this.keyId,
       message: dataBuff,
       address: this.address,
