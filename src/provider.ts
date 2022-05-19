@@ -289,4 +289,10 @@ export class KMSProvider {
   public stopBlockPolling(): void {
     this.engine.stop()
   }
+
+  public startBlockPolling(): void {
+    this.engine.start((err) => {
+      if (err) throw err
+    })
+  }
 }
