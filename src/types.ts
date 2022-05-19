@@ -33,4 +33,5 @@ export type KMSProviderConstructor = {
   pollingInterval?: number
   chainSettings?: ChainSettings
   kmsInstance?: KMS
+  engineStart?: boolean
 }
