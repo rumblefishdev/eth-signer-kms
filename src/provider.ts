@@ -282,4 +282,8 @@ export class KMSProvider {
 
     return true
   }
+
+  public stopBlockPolling(): void {
+    this.engine.stop()
+  }
 }
