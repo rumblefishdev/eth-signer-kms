@@ -39,7 +39,8 @@ export class KMSProvider {
     providerOrUrl,
     pollingInterval = 4000,
     chainSettings = {},
-    kmsInstance = new KMS()
+    kmsInstance = new KMS(),
+    engineStart = true
   }: KMSProviderConstructor) {
     this.keyId = keyId
     this.engine = new ProviderEngine({
@@ -171,10 +172,12 @@ export class KMSProvider {
       const provider = providerOrUrl
       this.engine.addProvider(new ProviderSubprovider(provider))
     }
-    //@ts-ignore
-    this.engine.start((err: any) => {
-      if (err) throw err
-    })
+
+    if (engineStart) {
+      this.engine.start((err) => {
+        if (err) throw err
+      })
+    }
   }
 
   private async initializeAddress(): Promise<void> {
@@ -285,5 +288,11 @@ export class KMSProvider {
 
   public stopBlockPolling(): void {
     this.engine.stop()
+  }
+
+  public startBlockPolling(): void {
+    this.engine.start((err) => {
+      if (err) throw err
+    })
   }
 }
