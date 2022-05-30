@@ -92,7 +92,7 @@ export class KMSProvider {
           })
 
           const txSignature = await createSignature({
-            kmsInstance: this.kmsInstance,
+            kmsInstance: self.kmsInstance,
             keyId: self.keyId,
             message: tx.getMessageToSign(),
             address: self.address,
