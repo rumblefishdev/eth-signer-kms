@@ -1,7 +1,7 @@
 import {
   SignParams,
   GetEthAddressFromKMSparams,
-  GetPublicKeyParams,
+  GetPublicKeyParams
 } from './types'
 import { getEthAddressFromPublicKey } from './eth'
 
@@ -10,7 +10,7 @@ export const getPublicKey = (getPublicKeyParams: GetPublicKeyParams) => {
   return kmsInstance.getPublicKey({ KeyId: keyId }).promise()
 }
 export const getEthAddressFromKMS = async (
-  getEthAddressFromKMSparams: GetEthAddressFromKMSparams,
+  getEthAddressFromKMSparams: GetEthAddressFromKMSparams
 ) => {
   const { keyId, kmsInstance } = getEthAddressFromKMSparams
   const KMSKey = await getPublicKey({ keyId, kmsInstance })

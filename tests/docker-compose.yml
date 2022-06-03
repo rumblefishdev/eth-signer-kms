@@ -1,0 +1,25 @@
+version: '3'
+services:
+
+  local-kms:
+    image: nsmithuk/local-kms
+
+  test-runner:
+    image: node:14-buster
+    volumes:
+      - ..:/app
+    depends_on:
+      - ganache
+      - local-kms
+    environment:
+      KMS_ENDPOINT: http://local-kms:8080
+      GANACHE_ENDPOINT: http://ganache:8545
+      MNEMONIC: someone token phrase mouse prison great priority cactus boost solid leave profit long bar door
+
+    working_dir: /app/
+    user: node
+    command: npm run test
+
+  ganache:
+    image: trufflesuite/ganache
+    command: --mnemonic "someone token phrase mouse prison great priority cactus boost solid leave profit long bar door" -e 1000000  -p 8545

@@ -1,11 +1,10 @@
 {
   "compilerOptions": {
-    "incremental": true,
     "target": "es2019",
     "module": "commonjs",
+    "declaration": true,
     "outDir": "./dist",
-    "rootDir": ".",
-    "noEmit": true,
+    "rootDir": "./src",
     "strict": true,
     "noImplicitAny": false,
     "strictNullChecks": false,
@@ -17,6 +16,7 @@
   "exclude": [
     "examples",
     "dist",
-    "node_modules"
+    "tests",
+    "jest.config.ts"
   ]
 }

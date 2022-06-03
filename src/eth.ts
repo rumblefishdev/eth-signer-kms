@@ -65,14 +65,14 @@ const getV = (
   s: EthUtil.BN,
   expectedEthAddr: string
 ) => {
-  let v = 27;
-  let pubKey = recoverPubKeyFromSig(msg, r, s, v);
+  let v = 27
+  let pubKey = recoverPubKeyFromSig(msg, r, s, v)
   if (pubKey !== expectedEthAddr) {
-    v = 28;
-    pubKey = recoverPubKeyFromSig(msg, r, s, v);
+    v = 28
+    pubKey = recoverPubKeyFromSig(msg, r, s, v)
   }
-  return new EthUtil.BN(v - 27);
-};
+  return new EthUtil.BN(v - 27)
+}
 
 export const getEthAddressFromPublicKey = (
   publicKey: KMS.PublicKeyType
@@ -96,7 +96,11 @@ export const createSignature = async (sigParams: CreateSignatureParams) => {
   let v = getV(message, r, s, address)
 
   // unsignedTxImplementsEIP155
-  if (txOpts && txOpts.gteHardfork('spuriousDragon') && !txOpts.gteHardfork('london')) {
+  if (
+    txOpts &&
+    txOpts.gteHardfork('spuriousDragon') &&
+    !txOpts.gteHardfork('london')
+  ) {
     v = v.iadd(txOpts.chainIdBN().muln(2).addn(8))
   }
 

@@ -152,7 +152,6 @@ export class KMSProvider {
       })
     )
 
-    
     this.engine.addProvider(new FiltersSubprovider())
 
     if (typeof providerOrUrl === 'string') {
@@ -185,7 +184,7 @@ export class KMSProvider {
       try {
         this.address = await getEthAddressFromKMS({
           keyId: this.keyId,
-          kmsInstance: this.kmsInstance,
+          kmsInstance: this.kmsInstance
         })
         resolve()
       } catch (e) {
