@@ -5,10 +5,10 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "test": "jest",
+    "test": "jest --runInBand",
     "ci-tests": "docker-compose -f tests/docker-compose.yml run test-runner",
     "ci-tests-cmdline": "docker-compose -f tests/docker-compose.yml run test-runner bash",
-    "lint": "eslint **/*.ts",
+    "lint": "eslint \"**/*.ts\"",
     "build": "rm -rf dist && tsc -p tsconfig.build.json",
     "prepare": "npm run build"
   },
@@ -26,20 +26,13 @@
     "aws-sdk": "*"
   },
   "dependencies": {
-    "ethers": "^5.5.4",
-    "@ethereumjs/common": "^2.5.0",
-    "@ethereumjs/tx": "^3.3.2",
-    "@ethersproject/bytes": "^5.5.0",
-    "@ethersproject/hash": "^5.5.0",
     "@types/ethereum-protocol": "^1.0.1",
     "asn1.js": "^5.4.1",
     "bn.js": "^4.12.0",
-    "ethereum-protocol": "^1.0.1",
-    "ethereumjs-util": "^6.2.1",
-    "ethereumjs-wallet": "^1.0.1",
-    "js-sha3": "^0.8.0",
-    "url": "^0.10.3",
-    "web3-provider-engine": "^16.0.1"
+    "ethereumjs-util": "^7.1.5",
+    "@ethersproject/keccak256": "^5.5.4",
+    "@ethersproject/bytes": "^5.5.4",
+    "ethers": "^5.5.4"
   },
   "devDependencies": {
     "@types/jest": "^28.1.0",

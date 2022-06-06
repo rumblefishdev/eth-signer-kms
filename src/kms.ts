@@ -4,6 +4,7 @@ import {
   GetPublicKeyParams
 } from './types'
 import { getEthAddressFromPublicKey } from './eth'
+import { utils } from 'ethers'
 
 export const getPublicKey = (getPublicKeyParams: GetPublicKeyParams) => {
   const { keyId, kmsInstance } = getPublicKeyParams
@@ -20,11 +21,11 @@ export const getEthAddressFromKMS = async (
 
 export const sign = (signParams: SignParams) => {
   const { keyId, message, kmsInstance } = signParams
-
+  const formatted = Buffer.from(utils.arrayify(message))
   return kmsInstance
     .sign({
       KeyId: keyId,
-      Message: message,
+      Message: formatted,
       SigningAlgorithm: 'ECDSA_SHA_256',
       MessageType: 'DIGEST'
     })
