@@ -26,15 +26,18 @@
     "aws-sdk": "*"
   },
   "dependencies": {
+    "@ethersproject/abstract-signer": "^5.5.4",
+    "@ethersproject/bytes": "^5.5.4",
+    "@ethersproject/hash": "^5.5.4",
+    "@ethersproject/keccak256": "^5.5.4",
     "@types/ethereum-protocol": "^1.0.1",
     "asn1.js": "^5.4.1",
     "bn.js": "^4.12.0",
     "ethereumjs-util": "^7.1.5",
-    "@ethersproject/keccak256": "^5.5.4",
-    "@ethersproject/bytes": "^5.5.4",
     "ethers": "^5.5.4"
   },
   "devDependencies": {
+    "@metamask/eth-sig-util": "^4.0.1",
     "@types/jest": "^28.1.0",
     "@typescript-eslint/eslint-plugin": "^4.27.0",
     "@typescript-eslint/parser": "^4.27.0",

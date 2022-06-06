@@ -1,11 +1,18 @@
 import AWS from 'aws-sdk'
 import { utils, Signer, providers, BigNumber } from 'ethers'
 import { keccak256 } from '@ethersproject/keccak256'
+import { _TypedDataEncoder } from '@ethersproject/hash'
+
 import { createSignature } from './eth'
 import { getEthAddressFromKMS } from './kms'
 import { hashPersonalMessage } from 'ethereumjs-util'
+import {
+  TypedDataDomain,
+  TypedDataField,
+  TypedDataSigner
+} from '@ethersproject/abstract-signer'
 
-export class KMSSigner extends Signer {
+export class KMSSigner extends Signer implements TypedDataSigner {
   private address: string
 
   constructor(
@@ -39,6 +46,22 @@ export class KMSSigner extends Signer {
       kmsInstance: this.kmsInstance,
       keyId: this.keyId,
       message: `0x${hash}`,
+      address: await this.getAddress()
+    })
+
+    return utils.joinSignature(sig)
+  }
+
+  async _signTypedData(
+    domain: TypedDataDomain,
+    types: Record<string, Array<TypedDataField>>,
+    value: Record<string, any>
+  ): Promise<string> {
+    const hash = _TypedDataEncoder.hash(domain, types, value)
+    const sig = await createSignature({
+      kmsInstance: this.kmsInstance,
+      keyId: this.keyId,
+      message: hash,
       address: await this.getAddress()
     })
 
