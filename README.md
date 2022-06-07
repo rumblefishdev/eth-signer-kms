@@ -36,6 +36,29 @@ https://github.com/ethereumjs/ethereumjs-monorepo
 | `provider` | `providers.Provider` | `null` | [x] | [Official doc](https://docs.ethers.io/v5/api/providers/provider/) |
 |`kmsInstance` | `AWS.KMS` | `new AWS.KMS()` | [ ] | KMS instance from [Official doc](https://www.npmjs.com/package/aws-sdk)
 
+## Examples
+
+##### KmsSigner
+- [KmsSigner initialization](https://github.com/rumblefishdev/eth-signer-kms/blob/master/test/signer.test.ts#L50)
+```
+new KMSSigner(provider, keyId, kms)
+```
+
+- [signMessage](https://github.com/rumblefishdev/eth-signer-kms/blob/master/test/signer.test.ts#L72)
+```
+await kmsSigner.signMessage(...)
+```
+
+- [_signTypedData](https://github.com/rumblefishdev/eth-signer-kms/blob/master/test/signer.test.ts#L102)
+```
+await kmsSigner._signTypedData(...)
+```
+##### function getEthAddressFromKMS
+- [getEthAddressFromKMS](https://github.com/rumblefishdev/eth-signer-kms/blob/master/test/signer.test.ts#L39)
+```
+await getEthAddressFromKMS(...)
+```
+
 ## Migration from v1.7.0 to v2.0.0:
 `KMSProvider` class became `KMSSigner`, as its instance no longer creates provider but receives one in constructor.
 
