@@ -1,13 +1,16 @@
 {
   "name": "@rumblefishdev/eth-signer-kms",
   "version": "1.7.0",
-  "description": "",
+  "description": "Sign ethereum transaction/messages using KMS service from AWS",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "rm -rf dist && tsc",
-    "prepublish": "tsc"
+    "test": "jest --runInBand",
+    "ci-tests": "docker-compose -f tests/docker-compose.yml run test-runner",
+    "ci-tests-cmdline": "docker-compose -f tests/docker-compose.yml run test-runner bash",
+    "lint": "eslint \"**/*.ts\"",
+    "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "prepare": "npm run build"
   },
   "repository": {
     "type": "git",
@@ -23,28 +26,29 @@
     "aws-sdk": "*"
   },
   "dependencies": {
-    "@ethereumjs/common": "^2.5.0",
-    "@ethereumjs/tx": "^3.3.2",
-    "@ethersproject/bytes": "^5.5.0",
-    "@ethersproject/hash": "^5.5.0",
+    "@ethersproject/abstract-signer": "^5.5.4",
+    "@ethersproject/bytes": "^5.5.4",
+    "@ethersproject/hash": "^5.5.4",
+    "@ethersproject/keccak256": "^5.5.4",
     "@types/ethereum-protocol": "^1.0.1",
     "asn1.js": "^5.4.1",
     "bn.js": "^4.12.0",
-    "ethereum-protocol": "^1.0.1",
-    "ethereumjs-util": "^6.2.1",
-    "ethereumjs-wallet": "^1.0.1",
-    "js-sha3": "^0.8.0",
-    "url": "^0.10.3",
-    "web3-provider-engine": "^16.0.1"
+    "ethereumjs-util": "^7.1.5",
+    "ethers": "^5.5.4"
   },
   "devDependencies": {
+    "@metamask/eth-sig-util": "^4.0.1",
+    "@types/jest": "^28.1.0",
     "@typescript-eslint/eslint-plugin": "^4.27.0",
     "@typescript-eslint/parser": "^4.27.0",
     "aws-sdk": "*",
     "eslint": "^7.29.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "^3.4.0",
+    "jest": "^28.1.0",
     "prettier": "^2.3.1",
+    "ts-jest": "^28.0.4",
+    "ts-node": "^10.8.0",
     "typescript": "^4.3.4"
   },
   "publishConfig": {
