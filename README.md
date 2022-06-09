@@ -39,22 +39,22 @@ https://github.com/ethereumjs/ethereumjs-monorepo
 ## Examples
 
 ##### KmsSigner
-- [KmsSigner initialization](https://github.com/rumblefishdev/eth-signer-kms/blob/master/test/signer.test.ts#L50)
+- [KmsSigner initialization](https://github.com/rumblefishdev/eth-signer-kms/blob/master/tests/signer.test.ts#L50)
 ```
 new KMSSigner(provider, keyId, kms)
 ```
 
-- [signMessage](https://github.com/rumblefishdev/eth-signer-kms/blob/master/test/signer.test.ts#L72)
+- [signMessage](https://github.com/rumblefishdev/eth-signer-kms/blob/master/tests/signer.test.ts#L72)
 ```
 await kmsSigner.signMessage(...)
 ```
 
-- [_signTypedData](https://github.com/rumblefishdev/eth-signer-kms/blob/master/test/signer.test.ts#L102)
+- [_signTypedData](https://github.com/rumblefishdev/eth-signer-kms/blob/master/tests/signer.test.ts#L102)
 ```
 await kmsSigner._signTypedData(...)
 ```
 ##### function getEthAddressFromKMS
-- [getEthAddressFromKMS](https://github.com/rumblefishdev/eth-signer-kms/blob/master/test/signer.test.ts#L39)
+- [getEthAddressFromKMS](https://github.com/rumblefishdev/eth-signer-kms/blob/master/tests/signer.test.ts#L39)
 ```
 await getEthAddressFromKMS(...)
 ```
