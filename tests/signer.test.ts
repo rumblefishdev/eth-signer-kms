@@ -67,6 +67,17 @@ describe('KMSSinger', () => {
     expect(targetBalance).toEqual(utils.parseEther('1'))
   })
 
+  it('should support legacy tx', async () => {
+    const someWallet = Wallet.createRandom()
+    const tx = kmsSigner.sendTransaction({
+      to: someWallet.address,
+      value: utils.parseEther('1'),
+      type: 0
+    })
+
+    await expect(tx).resolves.not.toThrow()
+  })
+
   it('should sign message using KMS', async () => {
     const message = 'hi'
     const signature = await kmsSigner.signMessage(message)

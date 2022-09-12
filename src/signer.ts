@@ -85,6 +85,11 @@ export class KMSSigner extends Signer implements TypedDataSigner {
       maxPriorityFeePerGas: tx.maxPriorityFeePerGas || undefined
     }
 
+    if (baseTx.type === 0) {
+      delete baseTx.maxFeePerGas
+      delete baseTx.maxPriorityFeePerGas
+    }
+
     const unsignedTx = utils.serializeTransaction(baseTx)
     const hash = keccak256(utils.arrayify(unsignedTx))
 
