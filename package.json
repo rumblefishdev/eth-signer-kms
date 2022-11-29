@@ -22,9 +22,6 @@
     "url": "https://github.com/rumblefishdev/eth-signer-kms/issues"
   },
   "homepage": "https://github.com/rumblefishdev/eth-signer-kms#readme",
-  "peerDependencies": {
-    "aws-sdk": "*"
-  },
   "dependencies": {
     "@ethersproject/abstract-signer": "^5.5.4",
     "@ethersproject/bytes": "^5.5.4",
