@@ -18,6 +18,18 @@ In order to work properly AWS KMS managed key must be:
 - ECC_SECG_P256K1 specified
 
 
+### IAM permissions
+
+Client using the library should have the following IAM permissions to the key that it uses:
+
+```
+  - Effect: Allow
+    Action:
+      - 'kms:Sign'
+      - 'kms:GetPublicKey'
+    Resource: !Ref KMSKeyArn
+```
+
 ## Usage
 
 #### * Before use, make sure that AWS SDK is properly configured! Find out how to do it [here](https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/configuring-the-jssdk.html).
