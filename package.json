@@ -34,6 +34,7 @@
     "ethers": "^5.5.4"
   },
   "devDependencies": {
+    "@aws-sdk/client-kms": "*",
     "@metamask/eth-sig-util": "^4.0.1",
     "@types/jest": "^28.1.0",
     "@typescript-eslint/eslint-plugin": "^4.27.0",

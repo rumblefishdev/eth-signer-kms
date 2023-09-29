@@ -1,19 +1,19 @@
-import { KMS } from 'aws-sdk'
+import { KMSClient, SignCommandInput } from '@aws-sdk/client-kms'
 
 export type SignParams = {
-  keyId: KMS.SignRequest['KeyId']
+  keyId: SignCommandInput['KeyId']
   message: string
-  kmsInstance: KMS
+  kmsInstance: KMSClient
 }
 
 export type GetEthAddressFromKMSparams = {
-  keyId: KMS.SignRequest['KeyId']
-  kmsInstance: KMS
+  keyId: SignCommandInput['KeyId']
+  kmsInstance: KMSClient
 }
 
 export type GetPublicKeyParams = {
-  keyId: KMS.SignRequest['KeyId']
-  kmsInstance: KMS
+  keyId: SignCommandInput['KeyId']
+  kmsInstance: KMSClient
 }
 
 export type CreateSignatureParams = SignParams & {

@@ -1,4 +1,3 @@
-import AWS from 'aws-sdk'
 import { getEthAddressFromKMS, KMSSigner } from '../src'
 import { utils, providers, Wallet } from 'ethers'
 import {
@@ -12,9 +11,10 @@ import {
   recoverTypedSignature,
   SignTypedDataVersion
 } from '@metamask/eth-sig-util'
+import { CreateKeyCommand, KMSClient } from '@aws-sdk/client-kms'
 
 describe('KMSSinger', () => {
-  let kms: AWS.KMS
+  let kms: KMSClient
   let keyId: string
   let walletAddress: string
   let kmsSigner: KMSSigner
@@ -22,18 +22,21 @@ describe('KMSSinger', () => {
 
   const provider = new providers.JsonRpcProvider(providerUrl)
   beforeAll(async () => {
-    kms = new AWS.KMS({
+    kms = new KMSClient({
       endpoint: process.env.KMS_ENDPOINT,
       region: 'local',
-      accessKeyId: 'AKIAXTTRUF7NU7KDMIED',
-      secretAccessKey: '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'
+      credentials: {
+        accessKeyId: 'AKIAXTTRUF7NU7KDMIED',
+        secretAccessKey: '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'
+      }
     })
-    const createResponse = await kms
-      .createKey({
-        KeyUsage: 'SIGN_VERIFY',
-        CustomerMasterKeySpec: 'ECC_SECG_P256K1'
-      })
-      .promise()
+
+    const command = new CreateKeyCommand({
+      KeyUsage: 'SIGN_VERIFY',
+      CustomerMasterKeySpec: 'ECC_SECG_P256K1'
+    })
+
+    const createResponse = await kms.send(command)
 
     keyId = createResponse.KeyMetadata.KeyId
     walletAddress = await getEthAddressFromKMS({ kmsInstance: kms, keyId })
