@@ -23,7 +23,10 @@ const getRS = async (signParams: SignParams) => {
     throw new Error('Signature is undefined.')
   }
 
-  const decoded = EcdsaSigAsnParse.decode(signature.Signature, 'der')
+  const decoded = EcdsaSigAsnParse.decode(
+    Buffer.from(signature.Signature),
+    'der'
+  )
 
   const r = BigNumber.from(`0x${decoded.r.toString('hex')}`)
   let s = BigNumber.from(`0x${decoded.s.toString('hex')}`)
@@ -67,10 +70,8 @@ const getRecoveryParam = (
   throw new Error('Failed to calculate recovery param')
 }
 
-export const getEthAddressFromPublicKey = (
-  publicKey: string | Buffer | Uint8Array | Blob
-): string => {
-  const res = EcdsaPubKey.decode(publicKey, 'der')
+export const getEthAddressFromPublicKey = (publicKey: Uint8Array): string => {
+  const res = EcdsaPubKey.decode(Buffer.from(publicKey))
 
   const pubKeyBuffer: Buffer = res.pubKey.data
 
