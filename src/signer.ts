@@ -1,4 +1,4 @@
-import AWS from 'aws-sdk'
+import { KMSClient } from '@aws-sdk/client-kms'
 import { utils, Signer, providers, BigNumber } from 'ethers'
 import { keccak256 } from '@ethersproject/keccak256'
 import { _TypedDataEncoder } from '@ethersproject/hash'
@@ -18,11 +18,11 @@ export class KMSSigner extends Signer implements TypedDataSigner {
   constructor(
     public provider: providers.Provider,
     public keyId: string,
-    private kmsInstance?: AWS.KMS
+    private kmsInstance?: KMSClient
   ) {
     super()
     this.keyId = keyId
-    this.kmsInstance = kmsInstance ?? new AWS.KMS()
+    this.kmsInstance = kmsInstance ?? new KMSClient({})
   }
 
   async getAddress(): Promise<string> {
