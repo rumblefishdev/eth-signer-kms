@@ -1,6 +1,6 @@
 import * as asn1 from 'asn1.js'
-import { BigNumber, utils } from 'ethers'
-
+import { BigNumber } from '@ethersproject/bignumber'
+import { recoverAddress, computeAddress } from "@ethersproject/transactions"
 import { sign } from './kms'
 import { CreateSignatureParams, SignParams } from './types'
 import { BytesLike, SignatureLike } from '@ethersproject/bytes'
@@ -55,8 +55,7 @@ const getRecoveryParam = (
   const formatted = msg
   let recoveryParam: number
   for (recoveryParam = 0; recoveryParam <= 1; recoveryParam++) {
-    const address = utils
-      .recoverAddress(formatted, {
+    const address = recoverAddress(formatted, {
         r,
         s,
         recoveryParam
@@ -75,7 +74,7 @@ export const getEthAddressFromPublicKey = (publicKey: Uint8Array): string => {
 
   const pubKeyBuffer: Buffer = res.pubKey.data
 
-  const address = utils.computeAddress(pubKeyBuffer)
+  const address = computeAddress(pubKeyBuffer)
   return address
 }
 

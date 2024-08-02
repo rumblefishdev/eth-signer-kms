@@ -1,11 +1,16 @@
 import { KMSClient } from '@aws-sdk/client-kms'
-import { utils, Signer, providers, BigNumber } from 'ethers'
+import { Signer } from '@ethersproject/abstract-signer'
+import { Provider, TransactionRequest } from '@ethersproject/providers'
+import { BigNumber } from '@ethersproject/bignumber'
+import { Bytes } from "@ethersproject/bytes"
 import { keccak256 } from '@ethersproject/keccak256'
-import { _TypedDataEncoder } from '@ethersproject/hash'
+import { toUtf8Bytes } from "@ethersproject/strings";
+import { arrayify, hexlify, joinSignature } from "@ethersproject/bytes";
+import { hashMessage, _TypedDataEncoder } from '@ethersproject/hash'
+import { UnsignedTransaction, serialize as serializeTransaction } from "@ethersproject/transactions";
 
 import { createSignature } from './eth'
 import { getEthAddressFromKMS } from './kms'
-import { hashPersonalMessage } from 'ethereumjs-util'
 import {
   TypedDataDomain,
   TypedDataField,
@@ -16,7 +21,7 @@ export class KMSSigner extends Signer implements TypedDataSigner {
   private address: string
 
   constructor(
-    public provider: providers.Provider,
+    public provider: Provider,
     public keyId: string,
     private kmsInstance?: KMSClient
   ) {
@@ -35,12 +40,12 @@ export class KMSSigner extends Signer implements TypedDataSigner {
     return this.address
   }
 
-  async signMessage(message: utils.Bytes | string): Promise<string> {
+  async signMessage(message: Bytes | string): Promise<string> {
     if (typeof message === 'string') {
-      message = utils.toUtf8Bytes(message)
+      message = toUtf8Bytes(message)
     }
-    const messageBuffer = Buffer.from(utils.hexlify(message).slice(2), 'hex')
-    const hash = hashPersonalMessage(messageBuffer).toString('hex')
+    const messageBuffer = Buffer.from(hexlify(message).slice(2), 'hex')
+    const hash = hashMessage(messageBuffer)
 
     const sig = await createSignature({
       kmsInstance: this.kmsInstance,
@@ -49,7 +54,7 @@ export class KMSSigner extends Signer implements TypedDataSigner {
       address: await this.getAddress()
     })
 
-    return utils.joinSignature(sig)
+    return joinSignature(sig)
   }
 
   async _signTypedData(
@@ -65,14 +70,14 @@ export class KMSSigner extends Signer implements TypedDataSigner {
       address: await this.getAddress()
     })
 
-    return utils.joinSignature(sig)
+    return joinSignature(sig)
   }
 
   async signTransaction(
-    transaction: providers.TransactionRequest
+    tx: TransactionRequest
   ): Promise<string> {
-    const tx = await utils.resolveProperties(transaction)
-    const baseTx: utils.UnsignedTransaction = {
+
+    const baseTx: UnsignedTransaction = {
       chainId: tx.chainId || undefined,
       data: tx.data || undefined,
       gasLimit: tx.gasLimit || undefined,
@@ -90,8 +95,8 @@ export class KMSSigner extends Signer implements TypedDataSigner {
       delete baseTx.maxPriorityFeePerGas
     }
 
-    const unsignedTx = utils.serializeTransaction(baseTx)
-    const hash = keccak256(utils.arrayify(unsignedTx))
+    const unsignedTx = serializeTransaction(baseTx)
+    const hash = keccak256(arrayify(unsignedTx))
 
     const sig = await createSignature({
       kmsInstance: this.kmsInstance,
@@ -100,11 +105,11 @@ export class KMSSigner extends Signer implements TypedDataSigner {
       address: await this.getAddress()
     })
 
-    const result = utils.serializeTransaction(baseTx, sig)
+    const result = serializeTransaction(baseTx, sig)
     return result
   }
 
-  connect(provider: providers.Provider): Signer {
+  connect(provider: Provider): Signer {
     return new KMSSigner(provider, this.keyId, this.kmsInstance)
   }
 }
