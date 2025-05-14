@@ -45,12 +45,13 @@ export class KMSSigner extends Signer implements TypedDataSigner {
       message = toUtf8Bytes(message)
     }
     const messageBuffer = Buffer.from(hexlify(message).slice(2), 'hex')
-    const hash = hashMessage(messageBuffer)
+    let hash = hashMessage(messageBuffer)
+    if (!hash.startsWith('0x')) hash = `0x${hash}`
 
     const sig = await createSignature({
       kmsInstance: this.kmsInstance,
       keyId: this.keyId,
-      message: `0x${hash}`,
+      message: hash,
       address: await this.getAddress()
     })
 
