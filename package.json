@@ -1,6 +1,6 @@
 {
   "name": "@rumblefishdev/eth-signer-kms",
-  "version": "3.1.2",
+  "version": "3.1.3",
   "description": "Sign ethereum transaction/messages using KMS service from AWS",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
