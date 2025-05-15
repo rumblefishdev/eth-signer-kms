@@ -4,7 +4,6 @@ import { Provider, TransactionRequest } from '@ethersproject/providers'
 import { BigNumber } from '@ethersproject/bignumber'
 import { Bytes } from "@ethersproject/bytes"
 import { keccak256 } from '@ethersproject/keccak256'
-import { toUtf8Bytes } from "@ethersproject/strings";
 import { arrayify, hexlify, joinSignature } from "@ethersproject/bytes";
 import { hashMessage, _TypedDataEncoder } from '@ethersproject/hash'
 import { UnsignedTransaction, serialize as serializeTransaction } from "@ethersproject/transactions";
