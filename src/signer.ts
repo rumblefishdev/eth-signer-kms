@@ -41,9 +41,6 @@ export class KMSSigner extends Signer implements TypedDataSigner {
   }
 
   async signMessage(message: Bytes | string): Promise<string> {
-    if (typeof message === 'string') {
-      message = toUtf8Bytes(message)
-    }
     const messageBuffer = Buffer.from(hexlify(message).slice(2), 'hex')
     let hash = hashMessage(messageBuffer)
     if (!hash.startsWith('0x')) hash = `0x${hash}`
