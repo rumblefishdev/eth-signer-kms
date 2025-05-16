@@ -3,7 +3,7 @@ import {
   GetEthAddressFromKMSparams,
   GetPublicKeyParams
 } from './types'
-import { arrayify } from "@ethersproject/bytes"
+import { getBytes } from "ethers"
 import { getEthAddressFromPublicKey } from './eth'
 import {
   GetPublicKeyCommand,
@@ -33,7 +33,7 @@ export const sign = async (
   signParams: SignParams
 ): Promise<SignCommandOutput> => {
   const { keyId, message, kmsInstance } = signParams
-  const formatted = Buffer.from(arrayify(message))
+  const formatted = Buffer.from(getBytes(message))
 
   const command = new SignCommand({
     KeyId: keyId,

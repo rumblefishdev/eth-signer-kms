@@ -1,48 +1,66 @@
 import { KMSClient } from '@aws-sdk/client-kms'
-import { Signer } from '@ethersproject/abstract-signer'
-import { Provider, TransactionRequest } from '@ethersproject/providers'
-import { BigNumber } from '@ethersproject/bignumber'
-import { Bytes } from "@ethersproject/bytes"
-import { keccak256 } from '@ethersproject/keccak256'
-import { arrayify, hexlify, joinSignature } from "@ethersproject/bytes";
-import { hashMessage, _TypedDataEncoder } from '@ethersproject/hash'
-import { UnsignedTransaction, serialize as serializeTransaction } from "@ethersproject/transactions";
 
-import { createSignature } from './eth'
-import { getEthAddressFromKMS } from './kms'
 import {
+  Signature,
+  TransactionRequest,
+  toUtf8Bytes,
   TypedDataDomain,
   TypedDataField,
-  TypedDataSigner
-} from '@ethersproject/abstract-signer'
+  JsonRpcApiProvider,
+  hashMessage,
+  TypedDataEncoder,
+  Transaction,
+  copyRequest,
+  resolveProperties,
+  resolveAddress,
+  assertArgument,
+  getAddress,
+  TransactionLike,
+  AbstractSigner,
+  assert,
+  Provider,
+  } from 'ethers'
+import { createSignature } from './eth'
+import { getEthAddressFromKMS } from './kms'
 
-export class KMSSigner extends Signer implements TypedDataSigner {
-  private address: string
+export class KMSSigner extends AbstractSigner<JsonRpcApiProvider> {
+
+  static async create(
+    provider: JsonRpcApiProvider,
+    keyId: string,
+    kmsInstance: KMSClient
+  ) {
+    const address = await getEthAddressFromKMS({
+      keyId: keyId,
+      kmsInstance: kmsInstance
+    })
+    return new KMSSigner(provider, address, keyId, kmsInstance)
+  }
 
   constructor(
-    public provider: Provider,
+    provider: JsonRpcApiProvider,
+    public address: string,
     public keyId: string,
-    private kmsInstance?: KMSClient
+    private kmsInstance: KMSClient
   ) {
-    super()
-    this.keyId = keyId
-    this.kmsInstance = kmsInstance ?? new KMSClient({})
+    super(provider);
+    // this.keyId = keyId
+    // this.kmsInstance = kmsInstance
+  }
+
+  connect(_provider: null | Provider): KMSSigner {
+    assert(false, "cannot reconnect JsonRpcSigner", "UNSUPPORTED_OPERATION", {
+      operation: "signer.connect"
+    });
   }
 
   async getAddress(): Promise<string> {
-    if (!this.address) {
-      this.address = await getEthAddressFromKMS({
-        keyId: this.keyId,
-        kmsInstance: this.kmsInstance
-      })
-    }
-    return this.address
+    return this.address;
   }
 
-  async signMessage(message: Bytes | string): Promise<string> {
-    const messageBuffer = Buffer.from(hexlify(message).slice(2), 'hex')
-    let hash = hashMessage(messageBuffer)
-    if (!hash.startsWith('0x')) hash = `0x${hash}`
+  async signMessage(_message: string | Uint8Array): Promise<string> {
+    const message = ((typeof(_message) === "string") ? toUtf8Bytes(_message): _message);
+    let hash = hashMessage(message)
 
     const sig = await createSignature({
       kmsInstance: this.kmsInstance,
@@ -51,15 +69,15 @@ export class KMSSigner extends Signer implements TypedDataSigner {
       address: await this.getAddress()
     })
 
-    return joinSignature(sig)
+    return Signature.from(sig).serialized
   }
 
-  async _signTypedData(
+  async signTypedData(
     domain: TypedDataDomain,
     types: Record<string, Array<TypedDataField>>,
     value: Record<string, any>
   ): Promise<string> {
-    const hash = _TypedDataEncoder.hash(domain, types, value)
+    const hash = TypedDataEncoder.hash(domain, types, value)
     const sig = await createSignature({
       kmsInstance: this.kmsInstance,
       keyId: this.keyId,
@@ -67,46 +85,39 @@ export class KMSSigner extends Signer implements TypedDataSigner {
       address: await this.getAddress()
     })
 
-    return joinSignature(sig)
+    return Signature.from(sig).serialized
   }
 
-  async signTransaction(
-    tx: TransactionRequest
-  ): Promise<string> {
+  async signTransaction(tx: TransactionRequest): Promise<string> {
+    tx = copyRequest(tx);
+    console.log( { tx} )
 
-    const baseTx: UnsignedTransaction = {
-      chainId: tx.chainId || undefined,
-      data: tx.data || undefined,
-      gasLimit: tx.gasLimit || undefined,
-      gasPrice: tx.gasPrice || undefined,
-      nonce: tx.nonce ? BigNumber.from(tx.nonce).toNumber() : undefined,
-      to: tx.to || undefined,
-      value: tx.value || undefined,
-      type: tx.type,
-      maxFeePerGas: tx.maxFeePerGas || undefined,
-      maxPriorityFeePerGas: tx.maxPriorityFeePerGas || undefined
+    // Replace any Addressable or ENS name with an address
+    const { to, from } = await resolveProperties({
+      to: (tx.to ? resolveAddress(tx.to, this): undefined),
+      from: (tx.from ? resolveAddress(tx.from, this): undefined)
+    });
+
+    if (to != null) { tx.to = to; }
+    if (from != null) { tx.from = from; }
+
+    if (tx.from != null) {
+      assertArgument(getAddress(<string>(tx.from)) === this.address,
+                     "transaction from address mismatch", "tx.from", tx.from);
+      delete tx.from;
     }
 
-    if (baseTx.type === 0) {
-      delete baseTx.maxFeePerGas
-      delete baseTx.maxPriorityFeePerGas
-    }
-
-    const unsignedTx = serializeTransaction(baseTx)
-    const hash = keccak256(arrayify(unsignedTx))
-
-    const sig = await createSignature({
+    // Build the transaction
+    const btx = Transaction.from(<TransactionLike<string>>tx);
+    console.log({ btx: btx.toJSON(), tx })
+    btx.signature = await createSignature({
       kmsInstance: this.kmsInstance,
       keyId: this.keyId,
-      message: hash,
+      message: btx.unsignedHash,
       address: await this.getAddress()
     })
 
-    const result = serializeTransaction(baseTx, sig)
-    return result
+    return btx.serialized;
   }
 
-  connect(provider: Provider): Signer {
-    return new KMSSigner(provider, this.keyId, this.kmsInstance)
-  }
 }

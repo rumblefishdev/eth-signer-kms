@@ -11,12 +11,15 @@
     "noUnusedLocals": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "maxNodeModuleJsDepth": 0
   },
+
   "exclude": [
     "examples",
     "dist",
     "tests",
-    "jest.config.ts"
+    "jest.config.ts",
+    "node_modules"
   ]
 }

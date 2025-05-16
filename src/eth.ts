@@ -1,9 +1,9 @@
 import * as asn1 from 'asn1.js'
-import { BigNumber } from '@ethersproject/bignumber'
-import { recoverAddress, computeAddress } from "@ethersproject/transactions"
+
+import { recoverAddress, computeAddress } from "ethers"
 import { sign } from './kms'
 import { CreateSignatureParams, SignParams } from './types'
-import { BytesLike, SignatureLike } from '@ethersproject/bytes'
+
 
 const EcdsaSigAsnParse = asn1.define('EcdsaSig', function (this: any) {
   this.seq().obj(this.key('r').int(), this.key('s').int())
@@ -28,21 +28,19 @@ const getRS = async (signParams: SignParams) => {
     'der'
   )
 
-  const r = BigNumber.from(`0x${decoded.r.toString('hex')}`)
-  let s = BigNumber.from(`0x${decoded.s.toString('hex')}`)
+  const r = BigInt(`0x${decoded.r.toString('hex')}`)
+  let s = BigInt(`0x${decoded.s.toString('hex')}`)
 
-  const secp256k1N = BigNumber.from(
-    '0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141'
-  )
-  const secp256k1halfN = secp256k1N.div(BigNumber.from(2))
+  const secp256k1N = BigInt('0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141')
+  const secp256k1halfN = secp256k1N / BigInt(2)
 
-  if (s.gt(secp256k1halfN)) {
-    s = secp256k1N.sub(s)
+  if (s > secp256k1halfN) {
+    s = secp256k1N - s
   }
 
   return {
-    r: r.toHexString(),
-    s: s.toHexString()
+    r: `0x${r.toString(16)}`,
+    s: `0x${s.toString(16)}`
   }
 }
 
@@ -56,11 +54,10 @@ const getRecoveryParam = (
   let recoveryParam: number
   for (recoveryParam = 0; recoveryParam <= 1; recoveryParam++) {
     const address = recoverAddress(formatted, {
-        r,
-        s,
-        recoveryParam
-      })
-      .toLowerCase()
+      r,
+      s,
+      v: recoveryParam
+    }).toLowerCase()
     if (address !== expectedEthAddr.toLowerCase()) {
       continue
     }
@@ -74,7 +71,7 @@ export const getEthAddressFromPublicKey = (publicKey: Uint8Array): string => {
 
   const pubKeyBuffer: Buffer = res.pubKey.data
 
-  const address = computeAddress(pubKeyBuffer)
+  const address = computeAddress(`0x${pubKeyBuffer.toString('hex')}`)
   return address
 }
 
@@ -83,7 +80,7 @@ export const createSignature = async ({
   message,
   address,
   kmsInstance
-}: CreateSignatureParams): Promise<Exclude<SignatureLike, BytesLike>> => {
+}: CreateSignatureParams) => {
   const { r, s } = await getRS({ keyId, message, kmsInstance })
   const recoveryParam = getRecoveryParam(message, r, s, address)
 
