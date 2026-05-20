@@ -97,7 +97,6 @@ export class KMSSigner extends AbstractSigner<JsonRpcApiProvider> {
 
   async signTransaction(tx: TransactionRequest): Promise<string> {
     tx = copyRequest(tx)
-    console.log({ tx })
 
     // Replace any Addressable or ENS name with an address
     const { to, from } = await resolveProperties({
@@ -124,7 +123,6 @@ export class KMSSigner extends AbstractSigner<JsonRpcApiProvider> {
 
     // Build the transaction
     const btx = Transaction.from(<TransactionLike<string>>tx)
-    console.log({ btx: btx.toJSON(), tx })
     btx.signature = await createSignature({
       kmsInstance: this.kmsInstance,
       keyId: this.keyId,
