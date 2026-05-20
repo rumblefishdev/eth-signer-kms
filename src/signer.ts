@@ -54,6 +54,7 @@ export class KMSSigner extends AbstractSigner<JsonRpcApiProvider> {
     // this.kmsInstance = kmsInstance
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   connect(_provider: null | Provider): KMSSigner {
     assert(false, 'cannot reconnect JsonRpcSigner', 'UNSUPPORTED_OPERATION', {
       operation: 'signer.connect'
