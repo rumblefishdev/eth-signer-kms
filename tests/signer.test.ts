@@ -1,5 +1,5 @@
 import { getEthAddressFromKMS, KMSSigner } from '../src'
-import { utils, providers, Wallet } from 'ethers'
+import { JsonRpcProvider, Wallet, parseEther, parseUnits } from 'ethers'
 import {
   bufferToHex,
   ecrecover,
@@ -20,7 +20,7 @@ describe('KMSSinger', () => {
   let kmsSigner: KMSSigner
   const providerUrl = process.env.GANACHE_ENDPOINT
 
-  const provider = new providers.JsonRpcProvider(providerUrl)
+  const provider = new JsonRpcProvider(providerUrl)
   beforeAll(async () => {
     kms = new KMSClient({
       endpoint: process.env.KMS_ENDPOINT,
@@ -41,40 +41,38 @@ describe('KMSSinger', () => {
     keyId = createResponse.KeyMetadata.KeyId
     walletAddress = await getEthAddressFromKMS({ kmsInstance: kms, keyId })
 
-    const wallet = Wallet.fromMnemonic(
-      process.env.MNEMONIC,
-      `m/44'/60'/0'/0/0`
-    ).connect(provider)
+    const wallet = Wallet.fromPhrase(process.env.MNEMONIC ?? '', provider)
+
     const tx = await wallet.sendTransaction({
       to: walletAddress,
-      value: utils.parseEther('10')
+      value: parseEther('10')
     })
     await tx.wait()
-    kmsSigner = new KMSSigner(provider, keyId, kms)
+    kmsSigner = await KMSSigner.create(provider, keyId, kms)
   })
 
   it('should sign transaction using KMS', async () => {
     expect(walletAddress).toMatch(/0x[0-9a-fA-f]{40}/)
-    const balance = await kmsSigner.getBalance()
-    expect(balance).toEqual(utils.parseEther('10'))
+    const balance = await provider.getBalance(kmsSigner.getAddress())
+    expect(balance).toEqual(parseEther('10'))
 
     const someWallet = Wallet.createRandom()
     await kmsSigner.sendTransaction({
       to: someWallet.address,
-      value: utils.parseEther('1'),
+      value: parseEther('1'),
       type: 2,
-      maxFeePerGas: utils.parseUnits('1', 'gwei')
+      maxFeePerGas: parseUnits('1', 'gwei')
     })
 
     const targetBalance = await provider.getBalance(someWallet.address)
-    expect(targetBalance).toEqual(utils.parseEther('1'))
+    expect(targetBalance).toEqual(parseEther('1'))
   })
 
   it('should support legacy tx', async () => {
     const someWallet = Wallet.createRandom()
     const tx = kmsSigner.sendTransaction({
       to: someWallet.address,
-      value: utils.parseEther('1'),
+      value: parseEther('1'),
       type: 0
     })
 
@@ -113,7 +111,7 @@ describe('KMSSinger', () => {
   it('should sign typed data using KMS', async () => {
     const chainId = await provider.send('eth_chainId', [])
     const verifyingContract = '0x1234123412341234123412341234123412341234'
-    const signature = await kmsSigner._signTypedData(
+    const signature = await kmsSigner.signTypedData(
       {
         name: 'Place Bid',
         version: '1',

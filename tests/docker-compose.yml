@@ -5,7 +5,7 @@ services:
     image: nsmithuk/local-kms
 
   test-runner:
-    image: node:14-buster
+    image: node:18-buster
     volumes:
       - ..:/app
     depends_on:
