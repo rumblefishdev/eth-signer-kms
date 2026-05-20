@@ -1,24 +1,38 @@
-import { getEthAddressFromKMS, KMSSigner } from '../src'
-import { JsonRpcProvider, Wallet, parseEther, parseUnits } from 'ethers'
 import {
-  bufferToHex,
+  Wallet,
+  Interface,
+  parseEther,
+  parseUnits,
+  JsonRpcProvider,
+  encodeRlp,
+  toBeHex,
+  concat,
+  keccak256,
+  recoverAddress
+} from 'ethers'
+import {
   ecrecover,
   fromRpcSig,
-  hashPersonalMessage,
-  publicToAddress
+  bufferToHex,
+  publicToAddress,
+  hashPersonalMessage
 } from 'ethereumjs-util'
+
 import {
   recoverTypedSignature,
   SignTypedDataVersion
 } from '@metamask/eth-sig-util'
 import { CreateKeyCommand, KMSClient } from '@aws-sdk/client-kms'
 
-describe('KMSSinger', () => {
+import { getEthAddressFromKMS, KMSSigner } from '../src'
+import { usdcAbi } from './erc20Abi'
+
+describe('KMSSigner', () => {
   let kms: KMSClient
   let keyId: string
   let walletAddress: string
   let kmsSigner: KMSSigner
-  const providerUrl = process.env.GANACHE_ENDPOINT
+  const providerUrl = process.env.ANVIL_ENDPOINT
 
   const provider = new JsonRpcProvider(providerUrl)
   beforeAll(async () => {
@@ -61,7 +75,8 @@ describe('KMSSinger', () => {
       to: someWallet.address,
       value: parseEther('1'),
       type: 2,
-      maxFeePerGas: parseUnits('1', 'gwei')
+      maxFeePerGas: parseUnits('2', 'gwei'),
+      maxPriorityFeePerGas: parseUnits('1', 'gwei')
     })
 
     const targetBalance = await provider.getBalance(someWallet.address)
@@ -73,7 +88,9 @@ describe('KMSSinger', () => {
     const tx = kmsSigner.sendTransaction({
       to: someWallet.address,
       value: parseEther('1'),
-      type: 0
+      type: 0,
+      nonce: await kmsSigner.getNonce(),
+      gasPrice: (await provider.getFeeData()).gasPrice
     })
 
     await expect(tx).resolves.not.toThrow()
@@ -159,5 +176,44 @@ describe('KMSSinger', () => {
       version: SignTypedDataVersion.V4
     })
     expect(walletAddress.toLowerCase()).toEqual(recoveredAddress.toLowerCase())
+  })
+
+  it('should authorize delegate and send EIP-7792 transaction using KMS', async () => {
+    const delegate = Wallet.createRandom()
+    const currentNonce = await kmsSigner.getNonce()
+    const network = await provider.getNetwork()
+    const erc20Interface = new Interface(usdcAbi)
+
+    const authorization = await kmsSigner.authorize({
+      address: delegate.address,
+      nonce: currentNonce + 1
+    })
+
+    expect(authorization.address).toEqual(delegate.address)
+    expect(authorization.nonce).toEqual(BigInt(currentNonce + 1))
+    expect(authorization.chainId).toEqual(network.chainId)
+    expect(authorization.signature.serialized).toMatch(/^0x[0-9a-fA-F]{130}$/)
+
+    const encoded = encodeRlp([
+      toBeHex(authorization.chainId),
+      authorization.address,
+      toBeHex(authorization.nonce)
+    ])
+
+    const digest = keccak256(concat(['0x05', encoded]))
+    const recoveredAddress = recoverAddress(digest, authorization.signature)
+
+    expect(recoveredAddress.toLowerCase()).toEqual(walletAddress.toLowerCase())
+
+    const tx = kmsSigner.sendTransaction({
+      to: kmsSigner.address,
+      authorizationList: [authorization],
+      data: erc20Interface.encodeFunctionData('approve', [
+        authorization.address,
+        parseEther('1')
+      ])
+    })
+
+    await expect(tx).resolves.not.toThrow()
   })
 })
