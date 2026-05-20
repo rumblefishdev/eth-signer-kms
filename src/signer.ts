@@ -50,8 +50,6 @@ export class KMSSigner extends AbstractSigner<JsonRpcApiProvider> {
     private kmsInstance: KMSClient
   ) {
     super(provider)
-    // this.keyId = keyId
-    // this.kmsInstance = kmsInstance
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

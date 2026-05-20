@@ -178,7 +178,7 @@ describe('KMSSigner', () => {
     expect(walletAddress.toLowerCase()).toEqual(recoveredAddress.toLowerCase())
   })
 
-  it('should authorize delegate and send EIP-7792 transaction using KMS', async () => {
+  it('should authorize delegate and send EIP-7702 transaction using KMS', async () => {
     const delegate = Wallet.createRandom()
     const currentNonce = await kmsSigner.getNonce()
     const network = await provider.getNetwork()
