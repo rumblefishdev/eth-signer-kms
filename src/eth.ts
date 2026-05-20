@@ -4,6 +4,20 @@ import { recoverAddress, computeAddress, Signature, hexlify } from 'ethers'
 import { sign } from './kms'
 import { CreateSignatureParams, SignParams } from './types'
 
+const SECP256K1_N = BigInt(
+  '0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141'
+)
+
+const SECP256K1_HALF_N = SECP256K1_N / BigInt(2)
+
+const toCanonicalS = (s: bigint): bigint => {
+  return s > SECP256K1_HALF_N ? SECP256K1_N - s : s
+}
+
+const toPaddedHex = (value: bigint): string => {
+  return `0x${value.toString(16).padStart(64, '0')}`
+}
+
 const EcdsaSigAsnParse = asn1.define('EcdsaSig', function (this: any) {
   this.seq().obj(this.key('r').int(), this.key('s').int())
 })
@@ -28,20 +42,11 @@ const getRS = async (signParams: SignParams) => {
   )
 
   const r = BigInt(`0x${decoded.r.toString('hex')}`)
-  let s = BigInt(`0x${decoded.s.toString('hex')}`)
-
-  const secp256k1N = BigInt(
-    '0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141'
-  )
-  const secp256k1halfN = secp256k1N / BigInt(2)
-
-  if (s > secp256k1halfN) {
-    s = secp256k1N - s
-  }
+  const s = toCanonicalS(BigInt(`0x${decoded.s.toString('hex')}`))
 
   return {
-    r: `0x${r.toString(16)}`,
-    s: `0x${s.toString(16)}`
+    r: toPaddedHex(r),
+    s: toPaddedHex(s)
   }
 }
 
@@ -140,13 +145,12 @@ export const parseKmsDerSignature = (derSignature: Uint8Array): Signature => {
 
   const sResult = readDerInteger(derSignature, rResult.offset)
 
-  const r = hexlify(rResult.value).slice(2).padStart(64, '0')
-
-  const s = hexlify(sResult.value).slice(2).padStart(64, '0')
+  const r = BigInt(hexlify(rResult.value))
+  const s = toCanonicalS(BigInt(hexlify(sResult.value)))
 
   return Signature.from({
-    r: `0x${r}`,
-    s: `0x${s}`,
+    r: toPaddedHex(r),
+    s: toPaddedHex(s),
     v: 27
   })
 }
