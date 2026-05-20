@@ -1,16 +1,18 @@
+import { getBytes } from 'ethers'
+
+import {
+  SignCommand,
+  SignCommandOutput,
+  GetPublicKeyCommand,
+  GetPublicKeyCommandOutput
+} from '@aws-sdk/client-kms'
+
 import {
   SignParams,
-  GetEthAddressFromKMSparams,
-  GetPublicKeyParams
+  GetPublicKeyParams,
+  GetEthAddressFromKMSparams
 } from './types'
-import { getBytes } from "ethers"
 import { getEthAddressFromPublicKey } from './eth'
-import {
-  GetPublicKeyCommand,
-  GetPublicKeyCommandOutput,
-  SignCommand,
-  SignCommandOutput
-} from '@aws-sdk/client-kms'
 
 export const getPublicKey = (
   getPublicKeyParams: GetPublicKeyParams

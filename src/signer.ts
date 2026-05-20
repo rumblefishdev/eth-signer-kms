@@ -1,5 +1,3 @@
-import { KMSClient } from '@aws-sdk/client-kms'
-
 import {
   Signature,
   TransactionRequest,
@@ -19,12 +17,20 @@ import {
   AbstractSigner,
   assert,
   Provider,
-  } from 'ethers'
-import { createSignature } from './eth'
-import { getEthAddressFromKMS } from './kms'
+  Authorization,
+  AuthorizationRequest,
+  encodeRlp,
+  toBeHex,
+  concat,
+  keccak256
+} from 'ethers'
+
+import { KMSClient } from '@aws-sdk/client-kms'
+
+import { getEthAddressFromKMS, sign } from './kms'
+import { createSignature, parseKmsDerSignature, withRecoveryBit } from './eth'
 
 export class KMSSigner extends AbstractSigner<JsonRpcApiProvider> {
-
   static async create(
     provider: JsonRpcApiProvider,
     keyId: string,
@@ -43,24 +49,25 @@ export class KMSSigner extends AbstractSigner<JsonRpcApiProvider> {
     public keyId: string,
     private kmsInstance: KMSClient
   ) {
-    super(provider);
+    super(provider)
     // this.keyId = keyId
     // this.kmsInstance = kmsInstance
   }
 
   connect(_provider: null | Provider): KMSSigner {
-    assert(false, "cannot reconnect JsonRpcSigner", "UNSUPPORTED_OPERATION", {
-      operation: "signer.connect"
-    });
+    assert(false, 'cannot reconnect JsonRpcSigner', 'UNSUPPORTED_OPERATION', {
+      operation: 'signer.connect'
+    })
   }
 
   async getAddress(): Promise<string> {
-    return this.address;
+    return this.address
   }
 
   async signMessage(_message: string | Uint8Array): Promise<string> {
-    const message = ((typeof(_message) === "string") ? toUtf8Bytes(_message): _message);
-    let hash = hashMessage(message)
+    const message =
+      typeof _message === 'string' ? toUtf8Bytes(_message) : _message
+    const hash = hashMessage(message)
 
     const sig = await createSignature({
       kmsInstance: this.kmsInstance,
@@ -89,26 +96,34 @@ export class KMSSigner extends AbstractSigner<JsonRpcApiProvider> {
   }
 
   async signTransaction(tx: TransactionRequest): Promise<string> {
-    tx = copyRequest(tx);
-    console.log( { tx} )
+    tx = copyRequest(tx)
+    console.log({ tx })
 
     // Replace any Addressable or ENS name with an address
     const { to, from } = await resolveProperties({
-      to: (tx.to ? resolveAddress(tx.to, this): undefined),
-      from: (tx.from ? resolveAddress(tx.from, this): undefined)
-    });
+      to: tx.to ? resolveAddress(tx.to, this) : undefined,
+      from: tx.from ? resolveAddress(tx.from, this) : undefined
+    })
 
-    if (to != null) { tx.to = to; }
-    if (from != null) { tx.from = from; }
+    if (to != null) {
+      tx.to = to
+    }
+    if (from != null) {
+      tx.from = from
+    }
 
     if (tx.from != null) {
-      assertArgument(getAddress(<string>(tx.from)) === this.address,
-                     "transaction from address mismatch", "tx.from", tx.from);
-      delete tx.from;
+      assertArgument(
+        getAddress(<string>tx.from) === this.address,
+        'transaction from address mismatch',
+        'tx.from',
+        tx.from
+      )
+      delete tx.from
     }
 
     // Build the transaction
-    const btx = Transaction.from(<TransactionLike<string>>tx);
+    const btx = Transaction.from(<TransactionLike<string>>tx)
     console.log({ btx: btx.toJSON(), tx })
     btx.signature = await createSignature({
       kmsInstance: this.kmsInstance,
@@ -117,7 +132,50 @@ export class KMSSigner extends AbstractSigner<JsonRpcApiProvider> {
       address: await this.getAddress()
     })
 
-    return btx.serialized;
+    return btx.serialized
   }
 
+  public async authorize(
+    authorization: AuthorizationRequest
+  ): Promise<Authorization> {
+    const provider = this.provider
+    if (!provider) {
+      throw new Error('missing provider')
+    }
+
+    const chainId = (await provider.getNetwork()).chainId
+
+    const resolved = await resolveProperties({
+      address: authorization.address.toString(),
+      nonce: BigInt(authorization.nonce!),
+      chainId: chainId
+    })
+
+    const encoded = encodeRlp([
+      toBeHex(resolved.chainId),
+      resolved.address,
+      toBeHex(resolved.nonce)
+    ])
+
+    const digest = keccak256(concat(['0x05', encoded]))
+
+    const derSignature = await sign({
+      kmsInstance: this.kmsInstance,
+      keyId: this.keyId,
+      message: digest
+    })
+    if (derSignature.Signature == undefined) {
+      throw new Error('missing signature')
+    }
+    let sig = parseKmsDerSignature(derSignature.Signature)
+
+    sig = Signature.from(sig)
+
+    sig = withRecoveryBit(digest, sig, await this.getAddress())
+
+    return {
+      ...resolved,
+      signature: sig
+    }
+  }
 }
