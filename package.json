@@ -6,8 +6,8 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "test": "jest --runInBand",
-    "ci-tests": "docker-compose -f tests/docker-compose.yml run test-runner",
-    "ci-tests-cmdline": "docker-compose -f tests/docker-compose.yml run test-runner bash",
+    "ci-tests": "docker compose -f tests/docker-compose.yml run test-runner",
+    "ci-tests-cmdline": "docker compose -f tests/docker-compose.yml run test-runner bash",
     "lint": "eslint \"**/*.ts\"",
     "build": "rm -rf dist && tsc -p tsconfig.build.json",
     "prepare": "npm run build"
