@@ -5,21 +5,32 @@ services:
     image: nsmithuk/local-kms
 
   test-runner:
-    image: node:14-buster
+    image: node:18-buster
     volumes:
       - ..:/app
     depends_on:
-      - ganache
+      - anvil
       - local-kms
     environment:
       KMS_ENDPOINT: http://local-kms:8080
-      GANACHE_ENDPOINT: http://ganache:8545
+      ANVIL_ENDPOINT: http://anvil:8545
       MNEMONIC: someone token phrase mouse prison great priority cactus boost solid leave profit long bar door
 
     working_dir: /app/
     user: node
     command: npm run test
 
-  ganache:
-    image: trufflesuite/ganache
-    command: --mnemonic "someone token phrase mouse prison great priority cactus boost solid leave profit long bar door" -e 1000000  -p 8545
+  anvil:
+    image: ghcr.io/foundry-rs/foundry
+    platform: linux/amd64
+    entrypoint: anvil
+    command:
+      [
+        "--host", "0.0.0.0",
+        "--port", "8545",
+        "--mnemonic", "someone token phrase mouse prison great priority cactus boost solid leave profit long bar door",
+        "--accounts", "1000",
+        "--balance", "10000"
+      ]
+    ports:
+      - "8545:8545"
